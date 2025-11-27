@@ -1,5 +1,5 @@
 
-# Tiny LISTEN.moe Gnome App
+# a tiny Gnome App for LISTEN.moe
 
 Anime/Japanese Radio powered by LISTEN.moe!
 
