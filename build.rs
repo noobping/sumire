@@ -1,3 +1,10 @@
+#[cfg(not(feature = "setup"))]
+#[cfg(debug_assertions)]
+pub const APP_ID: &str = concat!("dev.noobping.", env!("CARGO_PKG_NAME"), "-dev");
+#[cfg(not(feature = "setup"))]
+#[cfg(not(debug_assertions))]
+pub const APP_ID: &str = concat!("dev.noobping.", env!("CARGO_PKG_NAME"));
+
 fn main() {
     glib_build_tools::compile_resources(&["icons"], "icons/resources.xml", "compiled.gresource");
 
@@ -19,7 +26,7 @@ Version={version}
 Name={project}
 Comment={comment}
 Exec={project} %u
-Icon=listenmoe
+Icon={APP_ID}
 Terminal=false
 Categories=AudioVideo;Player;GTK;
 "
