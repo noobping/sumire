@@ -1,6 +1,6 @@
 use reqwest::blocking::{Client, Response};
 use rodio::{buffer::SamplesBuffer, OutputStreamBuilder, Sink};
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::error::Error;
 use std::io::{self, Read, Seek, SeekFrom};
 use std::rc::Rc;
@@ -52,19 +52,21 @@ impl MediaSource for HttpSource {
 
 pub struct Listen {
     station: Cell<Station>,
-    running: Arc<AtomicBool>,
+    running: Cell<bool>,
+    stop_flag: RefCell<Option<Arc<AtomicBool>>>,
 }
 
 impl Listen {
     pub fn new(station: Station) -> Rc<Self> {
         Rc::new(Self {
             station: Cell::new(station),
-            running: Arc::new(AtomicBool::new(false)),
+            running: Cell::new(false),
+            stop_flag: RefCell::new(None),
         })
     }
 
     pub fn set_station(self: &Rc<Self>, station: Station) {
-        let was_running = self.running.load(Ordering::SeqCst);
+        let was_running = self.running.get();
         if was_running {
             self.stop();
         }
@@ -75,29 +77,29 @@ impl Listen {
     }
 
     pub fn start(self: &Rc<Self>) {
-        if self
-            .running
-            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
-            .is_err()
-        {
+        if self.running.get() {
             return;
         }
+        self.running.set(true);
 
-        let running = self.running.clone();
+        let stop = Arc::new(AtomicBool::new(false));
+        *self.stop_flag.borrow_mut() = Some(stop.clone());
+
         let station = self.station.get();
         thread::spawn(move || {
-            if let Err(err) = run_listenmoe_stream(station, running.clone()) {
-                eprintln!("listen.moe stream exited with error: {err}");
-            }
+            let _ = run_listenmoe_stream(station, stop);
         });
     }
 
     pub fn stop(&self) {
-        self.running.store(false, Ordering::SeqCst);
+        self.running.set(false);
+        if let Some(stop) = self.stop_flag.borrow_mut().take() {
+            stop.store(true, Ordering::SeqCst);
+        }
     }
 }
 
-fn run_listenmoe_stream(station: Station, running: Arc<AtomicBool>) -> Result<(), Box<dyn Error>> {
+fn run_listenmoe_stream(station: Station, stop: Arc<AtomicBool>) -> Result<(), Box<dyn Error>> {
     let url = station.stream_url();
     println!("Connecting to {url}…");
 
@@ -145,7 +147,7 @@ fn run_listenmoe_stream(station: Station, running: Arc<AtomicBool>) -> Result<()
     let mut channels: u16 = 0;
     let mut sample_rate: u32 = 0;
 
-    while running.load(Ordering::Relaxed) {
+    while !stop.load(Ordering::Relaxed) {
         let packet = match format.next_packet() {
             Ok(p) => p,
             Err(SymphoniaError::ResetRequired) => {
