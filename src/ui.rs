@@ -1,0 +1,385 @@
+use crate::config::{APP_ID, RESOURCE_ID};
+use crate::listen::Listen;
+use crate::meta::{Meta, TrackInfo};
+use crate::station::Station;
+
+#[cfg(feature = "setup")]
+use crate::setup::{can_install_locally, install_locally, is_installed_locally, uninstall_locally};
+
+use adw::glib;
+use adw::prelude::*;
+use adw::{Application, WindowTitle};
+use gtk::{
+    gdk::{gdk_pixbuf::Pixbuf, Display, Texture},
+    gio::{Cancellable, MemoryInputStream, Menu, SimpleAction},
+    ApplicationWindow, Button, GestureClick, HeaderBar, IconTheme, MenuButton, Orientation,
+    Picture, Popover,
+};
+use std::error::Error;
+use std::rc::Rc;
+use std::sync::mpsc;
+use std::sync::mpsc::TryRecvError;
+use std::thread;
+use std::time::Duration;
+
+/// Helper to create a station action that switches to the given station and starts playback if needed.
+///
+/// This helper avoids the duplicated code that previously existed in the `jpop` and `kpop` actions.
+fn create_station_action(
+    station: Station,
+    play_button: &Button,
+    window: &ApplicationWindow,
+    radio: &Rc<Listen>,
+    meta: &Rc<Meta>,
+    action_name: &str,
+) -> SimpleAction {
+    let action = SimpleAction::new(action_name, None);
+    let radio = radio.clone();
+    let meta = meta.clone();
+    let win_clone = window.clone();
+    let play = play_button.clone();
+    action.connect_activate(move |_, _| {
+        radio.set_station(station);
+        meta.set_station(station);
+        // If playback is currently stopped (play button visible), start playing automatically.
+        if play.is_visible() {
+            let _ = adw::prelude::WidgetExt::activate_action(
+                &win_clone,
+                "win.play",
+                None::<&glib::Variant>,
+            );
+        }
+    });
+    action
+}
+
+/// Build the user interface.  This function is called once when the application
+/// is activated.  It constructs the window, header bar, actions and spawns
+/// background tasks for streaming audio and metadata.
+pub fn build_ui(app: &Application) {
+    let station = Station::Jpop;
+    let radio = Listen::new(station);
+    // Channel from Meta worker to main thread
+    let (tx, rx) = mpsc::channel::<TrackInfo>();
+    let meta = Meta::new(station, tx);
+    let (cover_tx, cover_rx) = mpsc::channel::<Result<Vec<u8>, String>>();
+    let win_title = WindowTitle::new("LISTEN.moe", "JPOP/KPOP Radio");
+
+    let play_button = Button::from_icon_name("media-playback-start-symbolic");
+    let stop_button = Button::from_icon_name("media-playback-pause-symbolic");
+    stop_button.set_visible(false);
+    let play_action = SimpleAction::new("play", None);
+    {
+        let radio = radio.clone();
+        let meta = meta.clone();
+        let win = win_title.clone();
+        let play = play_button.clone();
+        let stop = stop_button.clone();
+        play_action.connect_activate(move |_, _| {
+            win.set_title("LISTEN.moe");
+            win.set_subtitle("Connecting...");
+            meta.start();
+            radio.start();
+            play.set_visible(false);
+            stop.set_visible(true);
+        });
+    }
+    let stop_action = SimpleAction::new("stop", None);
+    {
+        let radio = radio.clone();
+        let meta = meta.clone();
+        let win = win_title.clone();
+        let play = play_button.clone();
+        let stop = stop_button.clone();
+        stop_action.connect_activate(move |_, _| {
+            meta.stop();
+            radio.stop();
+            stop.set_visible(false);
+            play.set_visible(true);
+            win.set_title("LISTEN.moe");
+            win.set_subtitle("JPOP/KPOP Radio");
+        });
+    }
+    play_button.set_action_name(Some("win.play"));
+    stop_button.set_action_name(Some("win.stop"));
+
+    // menu
+    let menu = Menu::new();
+    menu.append(Some("Copy title & artist"), Some("win.copy"));
+    menu.append(Some("Play J-pop"), Some("win.jpop"));
+    menu.append(Some("Play K-pop"), Some("win.kpop"));
+    menu.append(Some("About"), Some("win.about"));
+    menu.append(Some("Quite"), Some("win.quite"));
+    let more_button = MenuButton::builder()
+        .icon_name("view-more-symbolic")
+        .tooltip_text("Main Menu")
+        .menu_model(&menu)
+        .build();
+
+    // Headerbar with buttons
+    let buttons = gtk::Box::new(Orientation::Horizontal, 0);
+    buttons.append(&more_button);
+    buttons.append(&play_button);
+    buttons.append(&stop_button);
+
+    let header = HeaderBar::new();
+    header.pack_start(&buttons);
+    header.set_title_widget(Some(&win_title));
+    header.set_show_title_buttons(false);
+
+    let art_picture = Picture::builder().can_shrink(true).build();
+    let art_popover = Popover::builder()
+        .has_arrow(true)
+        .position(gtk::PositionType::Bottom)
+        .autohide(true)
+        .child(&art_picture)
+        .build();
+    art_popover.set_parent(&header);
+    // Maak de WindowTitle klikbaar om de cover-popover te togglen
+    let title_click = GestureClick::new();
+    {
+        let art = art_popover.clone();
+        title_click.connect_released(move |_, _, _, _| {
+            if art.is_visible() {
+                art.popdown();
+            } else {
+                art.popup();
+            }
+        });
+    }
+    win_title.add_controller(title_click);
+
+    let click = GestureClick::new();
+    {
+        let art = art_popover.clone();
+        click.connect_released(move |_, _, _, _| {
+            art.popdown();
+        });
+    }
+    art_picture.add_controller(click);
+
+    // Tiny dummy content so GTK can shrink the window
+    let dummy = gtk::Box::new(Orientation::Vertical, 0);
+    dummy.set_height_request(0);
+    dummy.set_vexpand(false);
+
+    let window = ApplicationWindow::builder()
+        .application(app)
+        .title("Listen.moe Radio")
+        .icon_name("listenmoe")
+        .default_width(300)
+        .default_height(40)
+        .resizable(false)
+        .build();
+
+    let close_btn = Button::from_icon_name("window-close-symbolic");
+    close_btn.set_action_name(Some("win.quite"));
+    header.pack_end(&close_btn);
+    let close_action = SimpleAction::new("quite", None);
+    {
+        let win = window.clone();
+        close_action.connect_activate(move |_, _| {
+            win.close();
+        });
+    }
+
+    window.set_titlebar(Some(&header));
+    window.set_child(Some(&dummy));
+
+    let about_action = SimpleAction::new("about", None);
+    {
+        let win_clone = window.clone();
+        about_action.connect_activate(move |_, _| {
+            let authors: Vec<_> = env!("CARGO_PKG_AUTHORS").split(':').collect();
+            let about = adw::AboutDialog::builder()
+                .application_name(env!("CARGO_PKG_NAME"))
+                .application_icon(APP_ID)
+                .version(env!("CARGO_PKG_VERSION"))
+                .developers(&authors[..])
+                .comments(option_env!("CARGO_PKG_DESCRIPTION").unwrap_or(""))
+                .build();
+            about.present(Some(&win_clone));
+        });
+    }
+    window.add_action(&about_action);
+
+    #[cfg(feature = "setup")]
+    {
+        let action = SimpleAction::new("setup", None);
+        action.connect_activate(move |_, _| {
+            if !can_install_locally() {
+                return;
+            }
+            let _ = match is_installed_locally() {
+                true => uninstall_locally(),
+                false => install_locally(),
+            };
+        });
+        window.add_action(&action);
+    }
+    window.add_action(&play_action);
+    window.add_action(&stop_action);
+    window.add_action(&close_action);
+
+    {
+        let play = play_button.clone();
+        let stop = stop_button.clone();
+        let win_clone = window.clone();
+        let action = SimpleAction::new("toggle", None);
+        action.connect_activate(move |_, _| {
+            if play.is_visible() {
+                let _ = adw::prelude::WidgetExt::activate_action(
+                    &win_clone,
+                    "win.play",
+                    None::<&glib::Variant>,
+                );
+            } else if stop.is_visible() {
+                let _ = adw::prelude::WidgetExt::activate_action(
+                    &win_clone,
+                    "win.stop",
+                    None::<&glib::Variant>,
+                );
+            }
+        });
+        window.add_action(&action);
+    }
+
+    // Create station actions using the helper function. This removes duplicated closures for J-pop and K-pop.
+    let jpop_action =
+        create_station_action(Station::Jpop, &play_button, &window, &radio, &meta, "jpop");
+    let kpop_action =
+        create_station_action(Station::Kpop, &play_button, &window, &radio, &meta, "kpop");
+    window.add_action(&jpop_action);
+    window.add_action(&kpop_action);
+
+    {
+        let win = win_title.clone();
+        let action = SimpleAction::new("copy", None);
+        action.connect_activate(move |_, _| {
+            // Get artist and title from the WindowTitle
+            let artist = win.title(); // artist
+            let title = win.subtitle(); // song title
+
+            // If nothing is playing yet, do nothing
+            if artist.is_empty() && title.is_empty() {
+                return;
+            }
+
+            let text = if artist.is_empty() {
+                title.to_string()
+            } else if title.is_empty() {
+                artist.to_string()
+            } else {
+                format!("{artist}, {title}")
+            };
+
+            if let Some(display) = Display::default() {
+                let clipboard = display.clipboard();
+                clipboard.set_text(&text);
+            }
+        });
+        window.add_action(&action);
+    }
+
+    #[cfg(feature = "setup")]
+    app.set_accels_for_action("win.setup", &["F2"]);
+    app.set_accels_for_action("win.about", &["F1"]);
+    app.set_accels_for_action("win.copy", &["<primary>c"]);
+    app.set_accels_for_action("win.quite", &["<primary>q", "Escape"]);
+    app.set_accels_for_action("win.play", &["XF86AudioPlay"]);
+    app.set_accels_for_action("win.stop", &["XF86AudioStop", "XF86AudioPause"]);
+    app.set_accels_for_action("win.jpop", &["<primary>j", "XF86AudioPrev", "<primary>z"]);
+    app.set_accels_for_action(
+        "win.kpop",
+        &[
+            "<primary>k",
+            "XF86AudioNext",
+            "<primary><shift>z",
+            "<primary>y",
+        ],
+    );
+    app.set_accels_for_action(
+        "win.toggle",
+        &["<primary>p", "space", "Return", "<primary>s"],
+    );
+
+    // Poll the channels on the GTK main thread and update the UI. Using `try_iter()`
+    // provides a clean iterator over any pending messages and reduces boilerplate.
+    {
+        let win = win_title.clone();
+        let art_popover = art_popover.clone();
+        let art_picture = art_picture.clone();
+        let cover_rx = cover_rx;
+        let cover_tx = cover_tx.clone();
+        let window = window.clone();
+        glib::timeout_add_local(Duration::from_millis(100), move || {
+            // Drain all available TrackInfo messages.
+            for info in rx.try_iter() {
+                win.set_title(&info.artist);
+                win.set_subtitle(&info.title);
+
+                // Determine which image to load, if any.
+                let image_url = info.album_cover.clone().or(info.artist_image.clone());
+                if let Some(url) = image_url {
+                    let tx = cover_tx.clone();
+                    thread::spawn(move || {
+                        let result = fetch_cover_bytes_blocking(&url).map_err(|e| e.to_string());
+                        let _ = tx.send(result);
+                    });
+                } else {
+                    art_popover.popdown();
+                }
+            }
+
+            // Drain any available cover updates.
+            for result in cover_rx.try_iter() {
+                match result {
+                    Ok(bytes_vec) => {
+                        let bytes = glib::Bytes::from_owned(bytes_vec);
+                        let stream = MemoryInputStream::from_bytes(&bytes);
+                        match Pixbuf::from_stream_at_scale(
+                            &stream,
+                            250,  // max width
+                            250,  // max height
+                            true, // preserve aspect
+                            None::<&Cancellable>,
+                        ) {
+                            Ok(pixbuf) => {
+                                let texture = Texture::for_pixbuf(&pixbuf);
+                                art_picture.set_paintable(Some(&texture));
+                                if window.is_active() {
+                                    art_popover.popup();
+                                }
+                            }
+                            Err(err) => {
+                                eprintln!("Failed to decode cover pixbuf: {err}");
+                                art_popover.popdown();
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("Failed to load cover bytes: {err}");
+                        art_popover.popdown();
+                    }
+                }
+            }
+
+            glib::ControlFlow::Continue
+        });
+    }
+
+    window.present();
+}
+
+/// Download an image synchronously.  This helper runs in a worker thread and
+/// therefore does not block the GTK main loop.  It returns the raw bytes
+/// representing the image or an error if the request fails.
+pub fn fetch_cover_bytes_blocking(url: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    let resp = reqwest::blocking::get(url)?;
+    if !resp.status().is_success() {
+        return Err(format!("Non-success status: {}", resp.status()).into());
+    }
+
+    let body = resp.bytes()?;
+    Ok(body.to_vec())
+}
