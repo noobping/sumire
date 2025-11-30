@@ -21,8 +21,8 @@ use adw::prelude::*;
 use adw::{Application, WindowTitle};
 use gtk::{
     gdk::Display,
-    gio::{resources_register_include, Menu, SimpleAction},
-    ApplicationWindow, Box, Button, HeaderBar, MenuButton, Orientation,
+    gio::{resources_register_include, File, Menu, SimpleAction},
+    ApplicationWindow, Box, Button, HeaderBar, MenuButton, Orientation, Picture, Popover,
 };
 use std::sync::mpsc;
 use std::sync::mpsc::TryRecvError;
@@ -105,6 +105,14 @@ fn build_ui(app: &Application) {
     header.pack_start(&buttons);
     header.set_title_widget(Some(&win_title));
     header.set_show_title_buttons(false);
+
+    let art_picture = Picture::builder().can_shrink(true).build();
+    let art_popover = Popover::builder()
+        .has_arrow(true)
+        .position(gtk::PositionType::Bottom)
+        .child(&art_picture)
+        .build();
+    art_popover.set_parent(&header);
 
     // Tiny dummy content so GTK can shrink the window
     let dummy = Box::new(Orientation::Vertical, 0);
@@ -258,6 +266,8 @@ fn build_ui(app: &Application) {
     // Poll the channel on the GTK main thread and update WindowTitle
     {
         let win = win_title.clone();
+        let art_popover = art_popover.clone();
+        let art_picture = art_picture.clone();
         glib::timeout_add_local(Duration::from_millis(100), move || {
             loop {
                 match rx.try_recv() {
@@ -265,6 +275,15 @@ fn build_ui(app: &Application) {
                         // Artist as title, song as subtitle
                         win.set_title(&info.artist);
                         win.set_subtitle(&info.title);
+                        // Prefer album cover; fall back to artist image
+                        let image_url = info.album_cover.clone().or(info.artist_image.clone());
+                        if let Some(url) = image_url {
+                            let file = File::for_uri(&url);
+                            art_picture.set_file(Some(&file));
+                            art_popover.popup();
+                        } else {
+                            art_popover.popdown();
+                        }
                     }
                     Err(TryRecvError::Empty) => {
                         break;
