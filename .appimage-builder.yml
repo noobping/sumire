@@ -1,0 +1,21 @@
+version: 1
+
+script:
+  - mkdir -p AppDir/usr/bin AppDir/usr/share/icons/hicolor/{192x192,scalable}/apps
+  - cp data/listenmoe.png AppDir/usr/share/icons/hicolor/192x192/apps/listenmoe.png
+  - cp -r data/scalable/apps/* AppDir/usr/share/icons/hicolor/scalable/apps/
+  - cp target/release/listenmoe AppDir/usr/bin/
+
+AppDir:
+  path: ./AppDir
+
+  app_info:
+    id: dev.noobping.listenmoe
+    name: "LISTEN.moe"
+    icon: listenmoe
+    version: "0.1.2"
+    exec: usr/bin/listenmoe
+
+AppImage:
+  arch: x86_64
+  update-information: guess
