@@ -3,6 +3,28 @@
 
 Anime/Japanese Radio powered by LISTEN.moe!
 
-![screenshot](https://github.com/noobping/listenmoe-gnome-app/blob/956ad93c123ddbe1fab3dbe16726e290725e134b/screenshot.png)
+![screenshot](data/screenshot.png)
 
-To install or uninstall this application locally, press `F1`. It will (un)install itself in the user directory (`%AppData%` or `~/.local`).
+## Flatpak App
+
+Install the app from my Flatpak Repo:
+
+```sh
+flatpak remote-add --if-not-exists flatpaks https://noobping.github.io/flatpaks/flatpaks.flatpakrepo ;\
+flatpak install flatpaks dev.noobping.listenmoe
+```
+
+## Stand-alone Executable
+
+You can download a stand-alone binary from the [GitHub Releases](https://github.com/noobping/listenmoe-gnome-app/releases/latest) page.
+After downloading:
+
+1. Mark it as executable:
+
+```sh
+chmod +x ./listenmoe.linux.x86_64 
+```
+
+2. Run the executable.
+
+While the app is running, press `F1` to install or uninstall it locally. The app will place (or remove) its files in the user data directory: `~/.local`.
