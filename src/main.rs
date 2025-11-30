@@ -20,10 +20,10 @@ use adw::glib;
 use adw::prelude::*;
 use adw::{Application, WindowTitle};
 use gtk::{
-    gdk::{gdk_pixbuf, Display, Texture},
-    gio::{resources_register_include, Cancellable, File, Menu, SimpleAction},
-    ApplicationWindow, Box, Button, GestureClick, HeaderBar, MenuButton, Orientation, Picture,
-    Popover, IconTheme,
+    gdk::{gdk_pixbuf::Pixbuf, Display, Texture},
+    gio::{resources_register_include, Cancellable, MemoryInputStream, File, Menu, SimpleAction},
+    ApplicationWindow, Box, Button, GestureClick, HeaderBar, IconTheme, MenuButton, Orientation,
+    Picture, Popover,
 };
 use std::sync::mpsc;
 use std::sync::mpsc::TryRecvError;
@@ -305,33 +305,14 @@ fn build_ui(app: &Application) {
             loop {
                 match rx.try_recv() {
                     Ok(info) => {
-                        // Artist as title, song as subtitle
                         win.set_title(&info.artist);
                         win.set_subtitle(&info.title);
-                        // Prefer album cover; fall back to artist image
+
                         let image_url = info.album_cover.clone().or(info.artist_image.clone());
                         if let Some(url) = image_url {
-                            let file = File::for_uri(&url);
-                            if let Ok(stream) = file.read(None::<&Cancellable>) {
-                                // Scale down while decoding
-                                if let Ok(pixbuf) = gdk_pixbuf::Pixbuf::from_stream_at_scale(
-                                    &stream,
-                                    250,  // max width
-                                    250,  // max height
-                                    true, // preserve aspect ratio
-                                    None::<&Cancellable>,
-                                ) {
-                                    let texture = Texture::for_pixbuf(&pixbuf);
-                                    art_picture.set_paintable(Some(&texture));
-                                    art_popover.popup();
-                                } else {
-                                    art_popover.popdown(); // Failed to decode
-                                }
-                            } else {
-                                art_popover.popdown(); // Failed to open remote file
-                            }
+                            load_cover_async(url, &art_picture, &art_popover);
                         } else {
-                            art_popover.popdown(); // No image at all
+                            art_popover.popdown();
                         }
                     }
                     Err(TryRecvError::Empty) => {
@@ -348,4 +329,41 @@ fn build_ui(app: &Application) {
     }
 
     window.present();
+}
+
+fn load_cover_async(url: String, art_picture: &Picture, art_popover: &Popover) {
+    let file = File::for_uri(&url);
+    let art_picture = art_picture.clone();
+    let art_popover = art_popover.clone();
+    file.clone().load_bytes_async(
+        None::<&Cancellable>,
+        move |_| {
+            match file.load_bytes(None::<&Cancellable>) {
+                Ok((bytes, _etag)) => {
+                    let stream = MemoryInputStream::from_bytes(&bytes);
+                    match Pixbuf::from_stream_at_scale(
+                        &stream,
+                        250,  // max width
+                        250,  // max height
+                        true, // keep aspect
+                        None::<&Cancellable>,
+                    ) {
+                        Ok(pixbuf) => {
+                            let texture = Texture::for_pixbuf(&pixbuf);
+                            art_picture.set_paintable(Some(&texture));
+                            art_popover.popup();
+                        }
+                        Err(err) => {
+                            eprintln!("Failed to decode cover pixbuf: {err}");
+                            art_popover.popdown();
+                        }
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Failed to load cover bytes: {err}");
+                    art_popover.popdown();
+                }
+            }
+        },
+    );
 }
