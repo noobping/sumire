@@ -118,16 +118,18 @@ pub fn build_ui(app: &Application) {
     header.set_title_widget(Some(&win_title));
     header.set_show_title_buttons(false);
 
-    let art_picture = Picture::builder().can_shrink(true).build();
+    let art_picture = Picture::builder()
+        .can_shrink(true)
+        .focusable(false)
+        .sensitive(false)
+        .build();
     let art_popover = Popover::builder()
         .has_arrow(true)
         .position(gtk::PositionType::Bottom)
         .autohide(true)
-        .focusable(false)
         .child(&art_picture)
         .build();
     art_popover.set_parent(&header);
-    // Maak de WindowTitle klikbaar om de cover-popover te togglen
     let title_click = GestureClick::new();
     {
         let picture = art_picture.clone();
@@ -141,15 +143,14 @@ pub fn build_ui(app: &Application) {
         });
     }
     win_title.add_controller(title_click);
-
-    let click = GestureClick::new();
+    let close_any_click = GestureClick::new();
     {
         let art = art_popover.clone();
-        click.connect_released(move |_, _, _, _| {
+        close_any_click.connect_released(move |_, _, _, _| {
             art.popdown();
         });
     }
-    art_picture.add_controller(click);
+    art_popover.add_controller(close_any_click);
 
     // Tiny dummy content so GTK can shrink the window
     let dummy = gtk::Box::new(Orientation::Vertical, 0);
