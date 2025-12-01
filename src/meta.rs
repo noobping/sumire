@@ -1,18 +1,14 @@
-use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use serde_json::Value;
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
+use std::io::{Read, Write};
 use std::rc::Rc;
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    mpsc::Sender,
-    Arc,
-};
+use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
-use tokio::runtime::Runtime;
-use tokio::time::sleep;
-use tokio_tungstenite::tungstenite::Message;
+use std::time::{Duration, Instant};
+use tungstenite::client::connect;
+use tungstenite::protocol::WebSocket;
+use tungstenite::Message;
 
 use crate::station::Station;
 
@@ -32,57 +28,97 @@ pub struct TrackInfo {
 }
 
 #[derive(Debug)]
+enum Control {
+    Stop,
+}
+
+#[derive(Debug)]
+enum State {
+    Stopped,
+    Running { tx: mpsc::Sender<Control> },
+}
+
+#[derive(Debug)]
+struct Inner {
+    station: Station,
+    state: State,
+    sender: mpsc::Sender<TrackInfo>,
+}
+
+#[derive(Debug)]
 pub struct Meta {
-    station: Cell<Station>,
-    running: Cell<bool>,
-    stop_flag: RefCell<Option<Arc<AtomicBool>>>,
-    sender: Sender<TrackInfo>,
+    inner: RefCell<Inner>,
 }
 
 impl Meta {
-    pub fn new(station: Station, sender: Sender<TrackInfo>) -> Rc<Self> {
+    pub fn new(station: Station, sender: mpsc::Sender<TrackInfo>) -> Rc<Self> {
         Rc::new(Self {
-            station: Cell::new(station),
-            running: Cell::new(false),
-            stop_flag: RefCell::new(None),
-            sender,
+            inner: RefCell::new(Inner {
+                station,
+                state: State::Stopped,
+                sender,
+            }),
         })
     }
 
     pub fn set_station(&self, station: Station) {
-        let was_running = self.running.get();
+        let mut inner = self.inner.borrow_mut();
+        let was_running = matches!(inner.state, State::Running { .. });
         if was_running {
-            self.stop();
+            Self::stop_inner(&mut inner);
         }
-        self.station.set(station);
+        inner.station = station;
         if was_running {
-            self.start();
+            Self::start_inner(&mut inner);
         }
     }
 
     pub fn start(&self) {
-        if self.running.get() {
-            return;
-        }
-        self.running.set(true);
-        let station = self.station.get();
-        let sender = self.sender.clone();
-        let stop = Arc::new(AtomicBool::new(false));
-        *self.stop_flag.borrow_mut() = Some(stop.clone());
-        thread::spawn(move || {
-            let rt = Runtime::new().expect("Failed to create Tokio runtime for Meta metadata loop");
-
-            if let Err(err) = rt.block_on(run_meta_loop(station, sender, stop)) {
-                eprintln!("Gateway error in metadata loop: {err}");
-            }
-        });
+        let mut inner = self.inner.borrow_mut();
+        Self::start_inner(&mut inner);
     }
 
     pub fn stop(&self) {
-        self.running.set(false);
-        if let Some(stop) = self.stop_flag.borrow_mut().take() {
-            stop.store(true, Ordering::SeqCst);
+        let mut inner = self.inner.borrow_mut();
+        Self::stop_inner(&mut inner);
+    }
+
+    fn start_inner(inner: &mut Inner) {
+        match inner.state {
+            State::Running { .. } => {
+                // Already running.
+                return;
+            }
+            State::Stopped => {
+                let (tx, rx) = mpsc::channel::<Control>();
+                let station = inner.station;
+                let sender = inner.sender.clone();
+
+                inner.state = State::Running { tx: tx.clone() };
+
+                thread::spawn(move || {
+                    if let Err(err) = run_meta_loop(station, sender, rx) {
+                        eprintln!("Gateway error in metadata loop: {err}");
+                    }
+                });
+            }
         }
+    }
+
+    fn stop_inner(inner: &mut Inner) {
+        if let State::Running { tx } = &inner.state {
+            // Ignore send errors (thread might already be gone).
+            let _ = tx.send(Control::Stop);
+        }
+        inner.state = State::Stopped;
+    }
+}
+
+impl Drop for Meta {
+    fn drop(&mut self) {
+        // Best-effort cleanup, same idea as in `Listen`.
+        let mut inner = self.inner.borrow_mut();
+        Self::stop_inner(&mut inner);
     }
 }
 
@@ -132,109 +168,115 @@ const OP_DISPATCH: u8 = 1;
 const OP_HEARTBEAT_ACK: u8 = 10;
 const EVENT_TRACK_UPDATE: &str = "TRACK_UPDATE";
 
-/// Outer loop: handles reconnects.
-async fn run_meta_loop(
+/// Outer reconnect loop using blocking tungstenite.
+fn run_meta_loop(
     station: Station,
-    sender: Sender<TrackInfo>,
-    stop: Arc<AtomicBool>,
+    sender: mpsc::Sender<TrackInfo>,
+    rx: mpsc::Receiver<Control>,
 ) -> MetaResult<()> {
-    while !stop.load(Ordering::SeqCst) {
-        match run_once(station.clone(), sender.clone(), stop.clone()).await {
+    loop {
+        // Before we try a connection, see if we've been asked to stop.
+        match rx.try_recv() {
+            Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+            Err(mpsc::TryRecvError::Empty) => {}
+        }
+
+        match run_once(station, sender.clone(), &rx) {
             Ok(()) => {
-                if stop.load(Ordering::SeqCst) {
-                    break;
+                // Normal end (server closed the connection).
+                match rx.try_recv() {
+                    Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+                    Err(mpsc::TryRecvError::Empty) => {
+                        thread::sleep(Duration::from_secs(5));
+                    }
                 }
-                sleep(Duration::from_secs(5)).await;
             }
             Err(err) => {
-                if stop.load(Ordering::SeqCst) {
-                    break;
-                }
                 eprintln!("Gateway connection error: {err}, retrying in 5s…");
-                sleep(Duration::from_secs(5)).await;
+                // Allow a stop request to cancel the retry delay.
+                match rx.try_recv() {
+                    Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+                    Err(mpsc::TryRecvError::Empty) => {
+                        thread::sleep(Duration::from_secs(5));
+                    }
+                }
             }
         }
     }
-
-    Ok(())
 }
 
-/// Single websocket session, with heartbeat via tokio
-async fn run_once(
+/// Single websocket session, with a simple heartbeat loop.
+fn run_once(
     station: Station,
-    sender: Sender<TrackInfo>,
-    stop: Arc<AtomicBool>,
+    sender: mpsc::Sender<TrackInfo>,
+    rx: &mpsc::Receiver<Control>,
 ) -> MetaResult<()> {
-    if stop.load(Ordering::SeqCst) {
-        return Ok(());
+    // Early stop check.
+    match rx.try_recv() {
+        Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => return Ok(()),
+        Err(mpsc::TryRecvError::Empty) => {}
     }
 
     let url = station.ws_url();
-    let (ws_stream, _) = tokio_tungstenite::connect_async(url).await?;
+    let (mut ws, _response) = connect(url)?;
     println!("Gateway connected to LISTEN.moe");
 
-    let (mut write, mut read) = ws_stream.split();
-
-    // Read hello and get heartbeat interval (if any)
-    let heartbeat_ms = read_hello_heartbeat(&mut read).await?;
+    // Read hello and get heartbeat interval (if any).
+    let heartbeat_ms = read_hello_heartbeat(&mut ws)?;
     let heartbeat_dur = heartbeat_ms.map(Duration::from_millis);
+    let mut last_heartbeat: Option<Instant> = heartbeat_dur.map(|_| Instant::now());
 
     loop {
-        if stop.load(Ordering::SeqCst) {
-            break;
+        // Check for control messages first.
+        match rx.try_recv() {
+            Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => break,
+            Err(mpsc::TryRecvError::Empty) => {}
         }
 
-        tokio::select! {
-            // Heartbeat, only compiled if there is a interval
-            _ = async {
-                if let Some(d) = heartbeat_dur {
-                    sleep(d).await;
-                }
-            }, if heartbeat_dur.is_some() => {
-                if stop.load(Ordering::SeqCst) {
-                    break;
-                }
-
-                if let Err(err) = write.send(Message::Text(r#"{"op":9}"#.into())).await {
+        // Heartbeat: if we know an interval, send a heartbeat when it elapses.
+        if let (Some(interval), Some(last)) = (heartbeat_dur, last_heartbeat.as_mut()) {
+            if last.elapsed() >= interval {
+                if let Err(err) = ws.send(Message::Text(r#"{"op":9}"#.into())) {
                     eprintln!("Gateway heartbeat send error: {err}");
                     break;
                 }
+                *last = Instant::now();
             }
+        }
 
-            // Incoming messages
-            maybe_msg = read.next() => {
-                let Some(msg) = maybe_msg else {
-                    // Stream ended
-                    break;
-                };
+        // Incoming messages.
+        let msg = match ws.read() {
+            Ok(msg) => msg,
+            Err(tungstenite::Error::ConnectionClosed) => break,
+            Err(err) => {
+                return Err(Box::new(err));
+            }
+        };
 
-                let msg = msg?;
-                if !msg.is_text() {
-                    continue;
+        if !msg.is_text() {
+            continue;
+        }
+
+        let txt = msg.into_text()?;
+        let env: GatewayEnvelope = match serde_json::from_str(&txt) {
+            Ok(env) => env,
+            Err(err) => {
+                eprintln!("Gateway JSON parse error: {err}");
+                continue;
+            }
+        };
+
+        match (env.op, env.t.as_deref()) {
+            (OP_HEARTBEAT_ACK, _) => {
+                println!("Gateway heartbeat ACK");
+            }
+            (OP_DISPATCH, Some(EVENT_TRACK_UPDATE)) => {
+                if let Some(info) = parse_track_info(&env.d) {
+                    let _ = sender.send(info);
                 }
-
-                let txt = msg.into_text()?;
-                let env: GatewayEnvelope = match serde_json::from_str(&txt) {
-                    Ok(env) => env,
-                    Err(err) => {
-                        eprintln!("Gateway JSON parse error: {err}");
-                        continue;
-                    }
-                };
-
-                match (env.op, env.t.as_deref()) {
-                    (OP_HEARTBEAT_ACK, _) => {
-                        println!("Gateway heartbeat ACK");
-                    }
-                    (OP_DISPATCH, Some(EVENT_TRACK_UPDATE)) => {
-                        if let Some(info) = parse_track_info(&env.d) {
-                            let _ = sender.send(info);
-                        }
-                    }
-                    _ => {
-                        // ignore other ops/events
-                    }
-                }
+            }
+            _ => {
+                // Ignore other ops/events.
             }
         }
     }
@@ -243,26 +285,29 @@ async fn run_once(
 }
 
 /// Read the initial hello and extract the heartbeat interval (if any).
-async fn read_hello_heartbeat(
-    read: &mut (impl StreamExt<Item = tokio_tungstenite::tungstenite::Result<Message>> + Unpin),
-) -> MetaResult<Option<u64>> {
-    if let Some(msg) = read.next().await {
-        let msg = msg?;
-        if msg.is_text() {
-            let txt = msg.into_text()?;
-            let env: GatewayEnvelope = serde_json::from_str(&txt)?;
+fn read_hello_heartbeat<S>(ws: &mut WebSocket<S>) -> MetaResult<Option<u64>>
+where
+    S: Read + Write,
+{
+    match ws.read() {
+        Ok(msg) => {
+            if msg.is_text() {
+                let txt = msg.into_text()?;
+                let env: GatewayEnvelope = serde_json::from_str(&txt)?;
 
-            if env.op == OP_HELLO {
-                let hello: GatewayHello = serde_json::from_value(env.d)?;
-                return Ok(Some(hello.heartbeat));
+                if env.op == OP_HELLO {
+                    let hello: GatewayHello = serde_json::from_value(env.d)?;
+                    return Ok(Some(hello.heartbeat));
+                }
             }
+            Ok(None)
         }
+        Err(tungstenite::Error::ConnectionClosed) => Ok(None),
+        Err(err) => Err(Box::new(err)),
     }
-
-    Ok(None)
 }
 
-/// Extract artist(s) + title
+/// Extract artist(s) + title from the gateway payload.
 fn parse_track_info(d: &Value) -> Option<TrackInfo> {
     let payload: GatewaySongPayload = serde_json::from_value(d.clone()).ok()?;
     let Song {

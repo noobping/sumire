@@ -3,8 +3,6 @@ name = "listenmoe"
 description = "Anime/Japanese Radio powered by LISTEN.moe!"
 repository = "https://github.com/noobping/listenmoe-gnome-app"
 license = "MIT"
-categories = ["multimedia", "music"]
-keywords = ["listen", "radio", "moe", "listen.moe", "jpop", "kpop", "j-pop", "k-pop", "anime", "music", "gtk4", "gnome", "adwaita", "adw", "rust"]
 homepage = "https://listen.moe/"
 authors = ["noobping"]
 version = "0.1.4"
@@ -23,12 +21,11 @@ symphonia = { version = "^0.5.5", features = ["ogg", "vorbis"] }
 reqwest = { version = "^0.12", default-features = false, features = ["blocking", "rustls-tls-webpki-roots"] }
 gtk = { version = "^0.10", package = "gtk4", features = ["gnome_48"] }
 adw = { version = "^0.8.0", package = "libadwaita", features = ["v1_8"] }
-futures-util = { version = "^0.3.31", features = ["tokio-io"] }
 serde_json = "^1.0.145"
-tokio = { version = "^1.48.0", default-features = false, features = ["rt-multi-thread", "macros"] }
-tokio-tungstenite = { version = "^0.28.0", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
 dirs = { version = "^6.0.0", optional = true}
 serde = "^1.0.228"
+tungstenite = { version = "^0.28.0", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 
 [build-dependencies]
 glib-build-tools = "^0.21.0"
+toml = "^0.9.8"
