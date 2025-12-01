@@ -35,10 +35,10 @@ jobs:
         with:
           fetch-tags: true
           fetch-depth: 0
-      - run: dnf install -y git
 
       - name: Resolve tag to use
         run: |
+          dnf install -y git
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
           echo "--- tags ---"
