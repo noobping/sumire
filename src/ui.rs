@@ -123,17 +123,19 @@ pub fn build_ui(app: &Application) {
         .has_arrow(true)
         .position(gtk::PositionType::Bottom)
         .autohide(true)
+        .focusable(false)
         .child(&art_picture)
         .build();
     art_popover.set_parent(&header);
     // Maak de WindowTitle klikbaar om de cover-popover te togglen
     let title_click = GestureClick::new();
     {
+        let picture = art_picture.clone();
         let art = art_popover.clone();
         title_click.connect_released(move |_, _, _, _| {
             if art.is_visible() {
                 art.popdown();
-            } else {
+            } else if picture.paintable().is_some() {
                 art.popup();
             }
         });
