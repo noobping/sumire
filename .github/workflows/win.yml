@@ -9,6 +9,8 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    permissions:
+      contents: write
 
     env:
       PKG_CONFIG_ALLOW_CROSS: 1
@@ -72,3 +74,17 @@ jobs:
         with:
           name: listenmoe-windows
           path: listenmoe-windows.zip
+
+      - id: get_latest_release
+        uses: pozetroninc/github-action-get-latest-release@v1
+        with:
+          repository: ${{ github.repository }}
+
+      - name: Upload asset to release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.get_latest_release.outputs.release }}
+          allowUpdates: true
+          removeArtifacts: false
+          artifacts: "listenmoe-windows.zip"
+          token: ${{ secrets.GITHUB_TOKEN }}
