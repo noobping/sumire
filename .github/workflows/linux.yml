@@ -9,16 +9,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Use Fedora container with newer GNOME/libadwaita
     container:
-      image: fedora:41
+      image: fedora:43
 
     strategy:
       fail-fast: false
       matrix:
         target:
           - x86_64-unknown-linux-gnu
-          # you can add aarch64 later
+          - aarch64-unknown-linux-gnu
 
     env:
       CARGO_TERM_COLOR: always
