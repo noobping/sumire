@@ -32,7 +32,8 @@ jobs:
             mold alsa-lib-devel libgpg-error-devel clang pkg-config nettle-devel \
             cairo-devel gcc git glib2-devel gtk4-devel libadwaita-devel make \
             openssl-devel pango-devel pkg-config pkgconf-pkg-config \
-            rustup
+            rustup gcc-arm-linux-gnu glibc-arm-linux-gnu \
+            gcc-x86_64-linux-gnu glibc-x86_64-linux-gnu
 
           rustup-init -y --profile minimal --default-toolchain stable
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
@@ -60,7 +61,12 @@ jobs:
       - name: Mark workspace as safe for git
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - run: echo "LATEST_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
+      - name: Set latest tag
+        run: |
+          set +e
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null)
+          set -e
+          echo "LATEST_TAG=${TAG}" >> $GITHUB_ENV
 
       - name: Release
         uses: softprops/action-gh-release@v2
