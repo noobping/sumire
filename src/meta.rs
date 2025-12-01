@@ -54,9 +54,7 @@ impl Meta {
         if was_running {
             self.stop();
         }
-
         self.station.set(station);
-
         if was_running {
             self.start();
         }
@@ -66,15 +64,11 @@ impl Meta {
         if self.running.get() {
             return;
         }
-
         self.running.set(true);
-
         let station = self.station.get();
         let sender = self.sender.clone();
-
         let stop = Arc::new(AtomicBool::new(false));
         *self.stop_flag.borrow_mut() = Some(stop.clone());
-
         thread::spawn(move || {
             let rt = Runtime::new().expect("Failed to create Tokio runtime for Meta metadata loop");
 
@@ -86,7 +80,6 @@ impl Meta {
 
     pub fn stop(&self) {
         self.running.set(false);
-
         if let Some(stop) = self.stop_flag.borrow_mut().take() {
             stop.store(true, Ordering::SeqCst);
         }
@@ -166,7 +159,7 @@ async fn run_meta_loop(
     Ok(())
 }
 
-/// Single websocket session, with inline heartbeat via `tokio::select!`.
+/// Single websocket session, with heartbeat via tokio
 async fn run_once(
     station: Station,
     sender: Sender<TrackInfo>,
@@ -192,7 +185,7 @@ async fn run_once(
         }
 
         tokio::select! {
-            // Heartbeat branch – only compiled if we actually got an interval
+            // Heartbeat, only compiled if there is a interval
             _ = async {
                 if let Some(d) = heartbeat_dur {
                     sleep(d).await;
@@ -208,7 +201,7 @@ async fn run_once(
                 }
             }
 
-            // Incoming messages branch
+            // Incoming messages
             maybe_msg = read.next() => {
                 let Some(msg) = maybe_msg else {
                     // Stream ended
@@ -239,7 +232,7 @@ async fn run_once(
                         }
                     }
                     _ => {
-                        // ignore other ops/events for now
+                        // ignore other ops/events
                     }
                 }
             }
@@ -269,7 +262,7 @@ async fn read_hello_heartbeat(
     Ok(None)
 }
 
-/// Extract artist(s) + title from the typed JSON `d` value.
+/// Extract artist(s) + title
 fn parse_track_info(d: &Value) -> Option<TrackInfo> {
     let payload: GatewaySongPayload = serde_json::from_value(d.clone()).ok()?;
     let Song {

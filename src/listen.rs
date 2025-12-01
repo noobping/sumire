@@ -1,4 +1,4 @@
-use reqwest::blocking::{Client};
+use reqwest::blocking::Client;
 use rodio::{buffer::SamplesBuffer, OutputStreamBuilder, Sink};
 use std::cell::RefCell;
 use std::error::Error;
@@ -13,13 +13,11 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
-use crate::station::Station;
 use crate::http_source::HttpSource;
+use crate::station::Station;
 
 type DynError = Box<dyn Error + Send + Sync + 'static>;
 type Result<T> = std::result::Result<T, DynError>;
-
-
 
 #[derive(Debug)]
 enum Control {
@@ -55,14 +53,11 @@ impl Listen {
 
     pub fn set_station(&self, station: Station) {
         let mut inner = self.inner.borrow_mut();
-
         let was_playing = matches!(inner.state, State::Playing { .. });
         if was_playing {
             Self::stop_inner(&mut inner);
         }
-
         inner.station = station;
-
         if was_playing {
             Self::start_inner(&mut inner);
         }
@@ -126,7 +121,6 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
         .get(url)
         .header("User-Agent", "listenmoe-rodio-symphonia/0.1")
         .send()?;
-
     println!("HTTP status: {}", response.status());
     if !response.status().is_success() {
         return Err(format!("HTTP status {}", response.status()).into());
@@ -142,11 +136,8 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
     let metadata_opts: MetadataOptions = Default::default();
     let decoder_opts: DecoderOptions = Default::default();
 
-    let probed =
-        symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
-
+    let probed = symphonia::default::get_probe().format(&hint, mss, &format_opts, &metadata_opts)?;
     let mut format = probed.format;
-
     let track = format
         .tracks()
         .iter()
