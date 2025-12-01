@@ -27,17 +27,23 @@ jobs:
       - name: Install build deps
         run: |
           dnf -y update
-          dnf -y install \
-            git \
-            gcc \
+          dnf -y install build-essential \
+            alsa-lib-devel \
+            cairo-devel \
             clang \
-            pkg-config \
-            make \
-            rust cargo \
+            gcc \
+            git \
+            glib2-devel \
             gtk4-devel \
             libadwaita-devel \
-            alsa-lib-devel \
-            glib2-devel
+            make \
+            nettle-devel \
+            openssl-devel \
+            pango-devel \
+            pkg-config \
+            pkgconf-pkg-config \
+            rust \
+            cargo
 
       - name: Checkout
         uses: actions/checkout@v4
