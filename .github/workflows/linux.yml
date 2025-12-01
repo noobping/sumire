@@ -30,6 +30,8 @@ jobs:
           dnf -y install mold alsa-lib-devel libgpg-error-devel clang pkg-config nettle-devel \
             cairo-devel gcc git glib2-devel gtk4-devel libadwaita-devel make nettle-devel \
             openssl-devel pango-devel pkg-config pkgconf-pkg-config cargo rustup
+      - name: targets
+        run: |
           rustup target add x86_64-unknown-linux-gnu
           rustup target add aarch64-unknown-linux-gnu
 
