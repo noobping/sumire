@@ -46,7 +46,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build (release)
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }} --features setup
 
       - name: List produced binary
         run: ls -R target/${{ matrix.target }}/release
