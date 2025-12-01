@@ -1,4 +1,4 @@
-![License](https://img.shields.io/badge/license-GPLv3+-darkgreen.svg)
+![License](https://img.shields.io/badge/license-GPLv3+-blue.svg)
 [![Windows Build](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/win.yml/badge.svg)](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/win.yml)
 [![Linux Build](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/linux.yml/badge.svg)](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/linux.yml)
 
