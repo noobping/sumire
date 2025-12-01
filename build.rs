@@ -66,7 +66,7 @@ fn desktop_file() {
     let project = env!("CARGO_PKG_NAME");
     let dir = Path::new(".");
     let version = env!("CARGO_PKG_VERSION");
-    let comment = option_env!("CARGO_PKG_DESCRIPTION").unwrap_or("Password manager");
+    let comment = option_env!("CARGO_PKG_DESCRIPTION").unwrap_or("");
     let contents = format!(
         "[Desktop Entry]
 Type=Application
