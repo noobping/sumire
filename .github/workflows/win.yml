@@ -73,8 +73,11 @@ jobs:
           name: listenmoe-windows
           path: listenmoe-windows.zip
 
-      - run: echo "GIT_TAG=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_ENV
-        shell: bash
+      - name: Get latest tag
+        run: |
+          $latest_tag = git describe --tags $(git rev-list --tags --max-count=1)
+          echo "Latest tag: $latest_tag"
+          "LATEST_TAG=$latest_tag" >> $env:GITHUB_ENV
 
       - name: Release
         uses: softprops/action-gh-release@v2
