@@ -79,7 +79,7 @@ jobs:
           "
 
       - name: Zip dist
-        run: powershell Compress-Archive dist listenmoe-windows.zip
+        run: powershell Compress-Archive "$GITHUB_WORKSPACE/dist" listenmoe-windows.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
