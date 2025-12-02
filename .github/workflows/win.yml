@@ -52,55 +52,37 @@ jobs:
       - name: Build
         run: cargo build --release --target x86_64-pc-windows-gnu
 
-      - name: Bundle exe + DLLs (flat)
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          EXE="$GITHUB_WORKSPACE/target/x86_64-pc-windows-gnu/release/listenmoe.exe"
-          OUT="$GITHUB_WORKSPACE/bundle"
-
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-          echo "EXE: $EXE"
-          echo "OUT: $OUT"
-
-          rm -rf "$OUT"
-          mkdir -p "$OUT"
-
-          echo "Copying exe..."
-          cp "$EXE" "$OUT/"
-
-          echo "Collecting DLL dependencies with ntldd..."
-          /c/tools/msys64/usr/bin/ntldd.exe -R "$EXE" \
-          | awk '/=>/ { print $3 }' \
-          | tr -d '\r' \
-          | sort -u \
-          | while read -r dll; do
-          if [ -n "$dll" ] && [ -f "$dll" ] && echo "$dll" | grep -q 'mingw64/bin'; then
-            echo "Copying $dll"
-            cp -u "$dll" "$OUT/"
-          fi
-          done
-
-          echo "Bundle contents:"
-          ls -l "$OUT"
-
-      - name: Create release zip
+      - name: Bundle
         shell: pwsh
         run: |
-          $workspace = $env:GITHUB_WORKSPACE
-          $bundleDir = Join-Path $workspace 'bundle'
-          if (-not (Test-Path $bundleDir)) {
-            Write-Error "Bundle dir not found: $bundleDir"
-          }
-
-          $zip = Join-Path $workspace 'listenmoe-windows.zip'
-          if (Test-Path $zip) {
-            Remove-Item $zip -Force
-          }
-
-          $src = Join-Path $bundleDir '*'
-          Compress-Archive -Path $src -DestinationPath $zip -Force
+         $workspace = $env:GITHUB_WORKSPACE
+         Write-Host "Workspace: $workspace"
+         $bundleDir = Join-Path $workspace 'bundle'
+         if (Test-Path $bundleDir) {
+          Remove-Item $bundleDir -Recurse -Force
+         }
+         New-Item -ItemType Directory -Path $bundleDir | Out-Null
+         $exe = Join-Path $workspace 'target\x86_64-pc-windows-gnu\release\listenmoe.exe'
+         if (-not (Test-Path $exe)) {
+          Write-Error "EXE not found at: $exe"
+         }
+         Write-Host "Copying exe: $exe"
+         Copy-Item $exe $bundleDir -Force
+         $mingwBin = 'C:\tools\msys64\mingw64\bin'
+         if (-not (Test-Path $mingwBin)) {
+          Write-Error "MinGW bin dir not found: $mingwBin"
+         }
+         Write-Host "Copying DLLs from: $mingwBin"
+         Get-ChildItem -Path $mingwBin -Filter '*.dll' |
+         Copy-Item -Destination $bundleDir -Force
+         Write-Host "Bundle contents:"
+         Get-ChildItem $bundleDir
+         $zip = Join-Path $workspace 'listenmoe-windows.zip'
+         if (Test-Path $zip) {
+          Remove-Item $zip -Force
+         }
+         $src = Join-Path $bundleDir '*'
+         Compress-Archive -Path $src -DestinationPath $zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
