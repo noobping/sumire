@@ -1,6 +1,6 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![Windows Build](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/win.yml/badge.svg)](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/win.yml)
-[![Linux Build](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/linux.yml/badge.svg)](https://github.com/noobping/listenmoe-gnome-app/actions/workflows/linux.yml)
+[![Windows Build](https://github.com/noobping/listenmoe-app/actions/workflows/win.yml/badge.svg)](https://github.com/noobping/listenmoe-app/actions/workflows/win.yml)
+[![Linux Build](https://github.com/noobping/listenmoe-app/actions/workflows/linux.yml/badge.svg)](https://github.com/noobping/listenmoe-app/actions/workflows/linux.yml)
 
 # The world's cutest radio
 
@@ -19,7 +19,7 @@ flatpak install flatpaks dev.noobping.listenmoe
 
 ## Stand-alone Executable
 
-You can download a stand-alone binary from the [GitHub Releases](https://github.com/noobping/listenmoe-gnome-app/releases/latest) page. After downloading:
+You can download a stand-alone binary from the [GitHub Releases](https://github.com/noobping/listenmoe-app/releases/latest) page. After downloading:
 
 1. Mark it as executable:
 
