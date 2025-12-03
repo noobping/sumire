@@ -57,8 +57,10 @@ fn main() {
     #[cfg(feature = "icon")]
     {
         let mut res = winresource::WindowsResource::new();
-        res.set_icon(data_dir.join(format!("{app_id}.ico"))); // path to your .ico
-        res.compile().expect("Failed to compile Windows resources");
+        if let Some(ico) = data_dir.join(format!("{app_id}.ico")).to_str() {
+            res.set_icon(ico);
+            res.compile().expect("Failed to compile Windows resources");
+        }
     }
 
     #[cfg(target_os = "linux")]
