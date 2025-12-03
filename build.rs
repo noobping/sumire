@@ -53,8 +53,7 @@ fn main() {
     // Compile GResources into $OUT_DIR/compiled.gresource
     glib_build_tools::compile_resources(&["data"], &format!("data/{app_id}.resources.xml"), "compiled.gresource");
 
-    #[cfg(target_os = "windows")]
-    #[cfg(feature = "icon")]
+    #[cfg(all(target_os = "windows", feature = "icon"))]
     {
         let mut res = winresource::WindowsResource::new();
         if let Some(ico) = data_dir.join(format!("{app_id}.ico")).to_str() {
@@ -63,8 +62,7 @@ fn main() {
         }
     }
 
-    #[cfg(target_os = "linux")]
-    #[cfg(not(feature = "setup"))]
+    #[cfg(all(target_os = "linux", not(feature = "setup")))]
     {
         desktop_file(&data_dir, &project, &version, &summary, &app_id);
         metainfo_file(&data_dir, &app_id, &authors.first().expect("unknown author"), &repository, &project, &summary, &homepage, &license, &version, &issue_tracker);
@@ -87,8 +85,7 @@ fn collect_svg_icons(dir: &Path, data_dir: &Path, icons: &mut Vec<String>) {
     }
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(not(feature = "setup"))]
+#[cfg(all(target_os = "linux", not(feature = "setup")))]
 fn desktop_file(data_dir: &Path, project: &str, version: &str, comment: &str, app_id: &str) {
     let contents = format!(
         "[Desktop Entry]
@@ -106,8 +103,7 @@ Categories=AudioVideo;Player;
         .expect("Can not build desktop file");
 }
 
-#[cfg(target_os = "linux")]
-#[cfg(not(feature = "setup"))]
+#[cfg(all(target_os = "linux", not(feature = "setup")))]
 fn metainfo_file(
     data_dir: &Path,
     app_id: &str,
