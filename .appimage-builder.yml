@@ -7,7 +7,7 @@ script:
   - cp -r data/symbolic/apps/* AppDir/usr/share/icons/hicolor/symbolic/apps/
   - cp target/release/listenmoe AppDir/usr/bin/
   - cp .listenmoe.profile AppDir/usr/share/firejail/listenmoe.profile
-  - cp -r "data/locale" "AppDir/share/"
+  - cp -r "data/locale" "AppDir/usr/share/"
 
 AppDir:
   path: ./AppDir
