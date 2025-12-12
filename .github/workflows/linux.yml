@@ -83,11 +83,25 @@ jobs:
         run: sh ./po.sh
 
       - name: Build AppImage
+        shell: bash
         run: |
-          docker run --rm \
-            -v "${PWD}:/project" -w /project \
-            appimagecrafters/appimage-builder:latest \
+          set -euo pipefail
+
+          if [[ "${{ matrix.appimage_arch }}" == "x86_64" ]]; then
+            docker run --rm \
+              -v "${PWD}:/project" -w /project \
+              appimagecrafters/appimage-builder:latest \
+              appimage-builder --skip-test --recipe .appimage-builder.yml
+          else
+            sudo apt-get update
+            sudo apt-get install -y python3 python3-pip python3-venv patchelf
+
+            python3 -m pip install --user --upgrade pip
+            python3 -m pip install --user appimage-builder
+
+            export PATH="$HOME/.local/bin:$PATH"
             appimage-builder --skip-test --recipe .appimage-builder.yml
+          fi
 
       - name: Collect AppImage
         if: ${{ env.TAG_NAME != '' }}
