@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.noobping.listenmoe</id>
+  <name>LISTEN.moe</name>
+  <summary>The world's cutest radio. Powered by LISTEN.moe!</summary>
+
+  <developer_name>Nick</developer_name>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+
+  <url type="homepage">https://listen.moe/</url>
+  <url type="bugtracker">https://github.com/noobping/listenmoe/issues</url>
+  <url type="vcs-browser">https://github.com/noobping/listenmoe</url>
+
+  <launchable type="desktop-id">io.github.noobping.listenmoe.desktop</launchable>
+
+  <description>
+    <p>The world's cutest radio. Powered by LISTEN.moe!</p>
+  </description>
+
+  <screenshots>
+    <screenshot type="default">
+      <image type="source">https://github.com/noobping/listenmoe/blob/fd1521e996d5e13da71ea4f169f52f88fb807b09/data/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+
+  <provides>
+    <binary>listenmoe</binary>
+  </provides>
+
+  <releases>
+    <release version="0.2.0" />
+  </releases>
+</component>

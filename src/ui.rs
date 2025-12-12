@@ -2,9 +2,6 @@ use crate::listen::Listen;
 use crate::meta::{Meta, TrackInfo};
 use crate::station::Station;
 
-#[cfg(all(target_os = "linux", feature = "setup"))]
-use crate::setup::{can_install_locally, install_locally, is_installed_locally, uninstall_locally};
-
 use adw::glib;
 use adw::gtk::{
     self,
@@ -26,7 +23,7 @@ use std::time::Duration;
 use gettextrs::gettext;
 
 const COVER_MAX_SIZE: i32 = 250;
-const APP_ID: &str = env!("APP_ID");
+const APP_ID: &str = "io.github.noobping.listenmoe";
 
 fn make_action<F>(name: &str, f: F) -> SimpleAction
 where
@@ -157,13 +154,14 @@ pub fn build_ui(app: &Application) {
         let win_clone = window.clone();
         make_action("about", move || {
             let authors: Vec<_> = env!("CARGO_PKG_AUTHORS").split(':').collect();
+            let issues = format!("{}/issues", env!("CARGO_PKG_REPOSITORY"));
             let about = adw::AboutDialog::builder()
-                .application_name(gettext(env!("CARGO_PKG_NAME")))
+                .application_name("LISTEN.moe")
                 .application_icon(APP_ID)
                 .version(env!("CARGO_PKG_VERSION"))
                 .developers(&authors[..])
                 .website(option_env!("CARGO_PKG_HOMEPAGE").unwrap_or(""))
-                .issue_url(option_env!("ISSUE_TRACKER").unwrap_or(""))
+                .issue_url(issues)
                 .license_type(gtk::License::MitX11)
                 .comments(gettext(env!("CARGO_PKG_DESCRIPTION")))
                 .build();
@@ -284,34 +282,8 @@ pub fn build_ui(app: &Application) {
         );
     }
     menu.append(Some(&gettext("About")), Some("win.about"));
-
-    #[cfg(all(target_os = "linux", feature = "setup"))]
-    let setup_index = menu.n_items();
-    #[cfg(all(target_os = "linux", feature = "setup"))]
-    menu.append(Some(if is_installed_locally() { "Uninstall" } else { "Install" } ), Some("win.setup"));
-
     menu.append(Some(&gettext("Quit")), Some("win.quit"));
 
-    #[cfg(all(target_os = "linux", feature = "setup"))]
-    window.add_action(&{
-        let menu_clone = menu.clone();
-        make_action("setup", move || {
-            if !can_install_locally() {
-                return;
-            }
-            let was_installed = is_installed_locally();
-            let _ = match was_installed {
-                true => uninstall_locally(),
-                false => install_locally(),
-            };
-            let new_label = if was_installed { &gettext("Install") } else { &gettext("Uninstall") };
-            menu_clone.remove(setup_index);
-            menu_clone.insert(setup_index, Some(new_label), Some("win.setup"));
-        })
-    });
-
-    #[cfg(all(target_os = "linux", feature = "setup"))]
-    app.set_accels_for_action("win.setup", &["F2"]);
     app.set_accels_for_action("win.about", &["F1"]);
     app.set_accels_for_action("win.copy", &["<primary>c"]);
     app.set_accels_for_action("win.quit", &["<primary>q", "Escape"]);

@@ -14,8 +14,10 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            appimage_arch: x86_64
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
+            appimage_arch: aarch64
 
     runs-on: ${{ matrix.os }}
 
@@ -74,21 +76,32 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build
-        run: cargo build --release --features setup,controls
+        run: cargo build --release
 
-      - name: Rename
-        run: mv target/release/${{ env.BIN_NAME }} ${{ env.BIN_NAME }}-${{ matrix.target }}
+      - name: Locales
+        run: sh ./po.sh
 
-      - name: Upload executable
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.BIN_NAME }}-${{ matrix.target }}
-          path: ${{ env.BIN_NAME }}-${{ matrix.target }}
+      - name: Build AppImage
+        run: |
+          docker run --rm \
+            -v "${PWD}:/project" -w /project \
+            appimagecrafters/appimage-builder:latest \
+            appimage-builder --skip-test --recipe .appimage-builder.yml
+
+      - name: Collect AppImage
+        if: ${{ env.TAG_NAME != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          appimage="$(ls -1 *.AppImage | head -n 1)"
+          out="${BIN_NAME}-${TAG_NAME}-${{ matrix.appimage_arch }}.AppImage"
+          mv "$appimage" "$out"
+          echo "APPIMAGE_FILE=$out" >> "$GITHUB_ENV"
 
       - name: Release
         if: ${{ env.TAG_NAME != '' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.TAG_NAME }}
-          files: ${{ env.BIN_NAME }}-${{ matrix.target }}
+          files: ${{ env.APPIMAGE_FILE }}
           overwrite_files: true

@@ -1,8 +1,5 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-#[cfg(all(target_os = "linux", feature = "setup"))]
-mod setup;
-
 mod http_source;
 mod listen;
 mod locale;
@@ -10,19 +7,19 @@ mod meta;
 mod station;
 mod ui;
 
-const APP_ID: &str = env!("APP_ID");
-#[cfg(any(debug_assertions, feature = "setup", feature = "icon"))]
-const RESOURCE_ID: &str = env!("RESOURCE_ID");
+const APP_ID: &str = "io.github.noobping.listenmoe";
+#[cfg(feature = "icon")]
+const RESOURCE_ID: &str = "/io/github/noobping/listenmoe";
 use adw::prelude::*;
 use adw::Application;
-#[cfg(any(debug_assertions, feature = "setup", feature = "icon"))]
+#[cfg(feature = "icon")]
 use adw::gtk::{gdk::Display, IconTheme};
 
 fn main() {
     locale::init_i18n();
 
     // Register resources compiled into the binary. If this fails, the app cannot find its assets.
-    #[cfg(any(debug_assertions, feature = "setup", feature = "icon"))]
+    #[cfg(feature = "icon")]
     adw::gtk::gio::resources_register_include!("compiled.gresource")
         .expect("Failed to register resources");
 
@@ -30,7 +27,7 @@ fn main() {
     adw::init().expect("Failed to initialize libadwaita");
 
     // Load the icon theme from the embedded resources so that icons resolve correctly even outside a installed environment.
-    #[cfg(any(debug_assertions, feature = "setup", feature = "icon"))]
+    #[cfg(feature = "icon")]
     if let Some(display) = Display::default() {
         let theme = IconTheme::for_display(&display);
         theme.add_resource_path(RESOURCE_ID);

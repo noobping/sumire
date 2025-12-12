@@ -1,20 +1,16 @@
 [package]
 name = "listenmoe"
 description = "The world's cutest radio. Powered by LISTEN.moe!"
-repository = "https://github.com/noobping/listenmoe-gnome-app"
-license = "MIT"
+repository = "https://github.com/noobping/listenmoe"
 homepage = "https://listen.moe/"
+license = "MIT"
 authors = ["Nick <hello@noobping.dev>"]
-version = "0.1.6"
+version = "0.2.0"
 edition = "2021"
 
-[package.metadata]
-issue-tracker = "https://github.com/noobping/listenmoe-gnome-app/issues"
-discord = "https://listen.moe/discord"
-
 [features]
-setup = []
-icon = ["winresource"]
+default = ["controls"]
+icon = ["winresource", "glib-build-tools"]
 controls = ["souvlaki"]
 
 [dependencies]
@@ -31,6 +27,5 @@ souvlaki = { version = "^0.8.3", optional = true, default-features = false, feat
 dirs-next = "^2.0.0"
 
 [build-dependencies]
-glib-build-tools = "^0.21.0"
-toml = "^0.9.8"
+glib-build-tools = { version = "^0.21.0", optional = true}
 winresource = { version = "^0.1.28", optional = true}

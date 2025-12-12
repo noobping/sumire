@@ -4,7 +4,7 @@ use gettextrs::{
 };
 use std::{env, fs, path::{Path, PathBuf}};
 
-const APP_ID: &str = env!("APP_ID"); // or your crate's APP_ID constant
+const APP_ID: &str = "io.github.noobping.listenmoe";
 
 fn find_locale_dir() -> PathBuf {
     // Developer directory (cargo run)

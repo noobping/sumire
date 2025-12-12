@@ -1,6 +1,6 @@
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![Windows Build](https://github.com/noobping/listenmoe-app/actions/workflows/win.yml/badge.svg)](https://github.com/noobping/listenmoe-app/actions/workflows/win.yml)
-[![Linux Build](https://github.com/noobping/listenmoe-app/actions/workflows/linux.yml/badge.svg)](https://github.com/noobping/listenmoe-app/actions/workflows/linux.yml)
+[![Windows Build](https://github.com/noobping/listenmoe/actions/workflows/win.yml/badge.svg)](https://github.com/noobping/listenmoe/actions/workflows/win.yml)
+[![Linux Build](https://github.com/noobping/listenmoe/actions/workflows/linux.yml/badge.svg)](https://github.com/noobping/listenmoe/actions/workflows/linux.yml)
 
 # The world's cutest radio
 
@@ -14,22 +14,8 @@ Install the app from my Flatpak Repo:
 
 ```sh
 flatpak remote-add --if-not-exists flatpaks https://noobping.github.io/flatpaks/flatpaks.flatpakrepo ;\
-flatpak install flatpaks dev.noobping.listenmoe
+flatpak install flatpaks io.github.noobping.listenmoe
 ```
-
-## Stand-alone Executable
-
-You can download a stand-alone binary from the [GitHub Releases](https://github.com/noobping/listenmoe-app/releases/latest) page. After downloading:
-
-1. Mark it as executable:
-
-```sh
-chmod +x ./listenmoe.linux.x86_64 
-```
-
-2. Run the executable.
-
-While the app is running, press `F2` to install or uninstall it locally. The app will place (or remove) its files in the user data directory: `~/.local`.
 
 ## AppImage
 
@@ -42,7 +28,3 @@ mkdir -p ~/.config/firejail
 cp /path/to/extracted/usr/share/firejail/listenmoe.profile ~/.config/firejail/
 firejail listenmoe
 ```
-
-## Development
-
-This project is developed primarily on Linux. It can also run on Windows, but only when the icon feature is enabled (it's off by default).
