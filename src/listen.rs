@@ -83,7 +83,7 @@ impl Listen {
                 let (tx, rx) = mpsc::channel::<Control>();
                 let station = inner.station;
 
-                inner.state = State::Playing { tx: tx.clone() };
+                inner.state = State::Playing { tx };
 
                 // detached worker thread; will exit on Stop or error
                 thread::spawn(move || {
@@ -149,6 +149,7 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
 
     let stream = OutputStreamBuilder::open_default_stream()?;
     let sink = Sink::connect_new(&stream.mixer());
+    let mut scratch: Vec<f32> = Vec::new();
 
     println!("Started decoding + playback.");
 
@@ -157,15 +158,14 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
     let mut sample_rate: u32 = 0;
 
     loop {
-        // Check for control messages first
-        match rx.try_recv() {
-            Ok(Control::Stop) | Err(mpsc::TryRecvError::Disconnected) => {
-                println!("Stop requested, shutting down stream.");
-                break;
-            }
-            Err(mpsc::TryRecvError::Empty) => {
-                // no command, continue
-            }
+        while let Ok(Control::Stop) = rx.try_recv() {
+            println!("Stop requested, shutting down stream.");
+            sink.stop();
+            return Ok(());
+        }
+        if matches!(rx.try_recv(), Err(mpsc::TryRecvError::Disconnected)) {
+            sink.stop();
+            return Ok(());
         }
 
         let packet = match format.next_packet() {
@@ -183,8 +183,6 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
                     .make(&new_track.codec_params, &decoder_opts)?;
 
                 sample_buf = None;
-                channels = 0;
-                sample_rate = 0;
                 continue;
             }
             Err(err) => {
@@ -211,8 +209,6 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
                 decoder = symphonia::default::get_codecs()
                     .make(&new_track.codec_params, &decoder_opts)?;
                 sample_buf = None;
-                channels = 0;
-                sample_rate = 0;
                 continue;
             }
             Err(err) => {
@@ -233,11 +229,10 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
         let buf = sample_buf.as_mut().expect("sample_buf just initialized");
         buf.copy_interleaved_ref(decoded);
 
-        let samples = buf.samples().to_owned();
+        scratch.clear();
+        scratch.extend_from_slice(buf.samples());
+        let samples = scratch.clone();
         let source = SamplesBuffer::new(channels, sample_rate, samples);
         sink.append(source);
     }
-
-    sink.stop();
-    Ok(())
 }
