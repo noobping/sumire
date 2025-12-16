@@ -54,6 +54,10 @@ impl Listen {
         })
     }
 
+    pub fn get_station(&self) -> Station {
+        self.inner.borrow_mut().station
+    }
+
     pub fn set_station(&self, station: Station) {
         let mut inner = self.inner.borrow_mut();
         let was_playing_or_paused = matches!(inner.state, State::Playing { .. } | State::Paused { .. });
