@@ -13,17 +13,29 @@
   <url type="bugtracker">https://github.com/noobping/listenmoe/issues</url>
   <url type="vcs-browser">https://github.com/noobping/listenmoe</url>
 
-  <content_rating type="oars-1.1"/>
+  <content_rating type="oars-1.1" />
 
   <launchable type="desktop-id">io.github.noobping.listenmoe.desktop</launchable>
 
   <description>
-    <p>The world's cutest radio. Powered by LISTEN.moe!</p>
+    <p>Tune into pure kawaii energy with nonstop Japanese and Korean music, streamed 24/7 straight
+      from LISTEN.moe.</p>
+    <p>
+      Enjoy a clean, distraction-free listening experience with no ads, real-time song information,
+      and seamless media control support so you can manage playback from anywhere on your system.
+    </p>
+    <ul>
+      <li>24/7 radio streaming</li>
+      <li>No advertisements</li>
+      <li>Displays the currently playing song</li>
+      <li>System media control integration</li>
+    </ul>
   </description>
 
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
+      <image type="source">
+        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
     </screenshot>
   </screenshots>
 
