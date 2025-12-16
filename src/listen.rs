@@ -172,7 +172,6 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
 
     let stream = OutputStreamBuilder::open_default_stream()?;
     let sink = Sink::connect_new(&stream.mixer());
-    let mut scratch: Vec<f32> = Vec::new();
 
     println!("Started decoding + playback.");
 
@@ -266,9 +265,7 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
         let buf = sample_buf.as_mut().expect("sample_buf just initialized");
         buf.copy_interleaved_ref(decoded);
 
-        scratch.clear();
-        scratch.extend_from_slice(buf.samples());
-        let samples = scratch.clone();
+        let samples = buf.samples().to_owned();
         let source = SamplesBuffer::new(channels, sample_rate, samples);
         sink.append(source);
     }
