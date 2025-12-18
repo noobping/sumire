@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.noobping.listenmoe</id>
-  <name>LISTEN.moe</name>
+  <name>LISTEN.moe (Unofficial)</name>
   <summary>The world's cutest radio. Powered by LISTEN.moe!</summary>
   <summary xml:lang="bg">Най-сладкото радио в света. Захранвано от LISTEN.moe!</summary>
   <summary xml:lang="cs">Nejroztomilejší rádio na světě. Poháněno LISTEN.moe!</summary>
@@ -82,6 +82,7 @@
   <description>
     <p>Tune into pure kawaii energy with nonstop Japanese and Korean music, streamed 24/7 straight
       from LISTEN.moe.</p>
+    <p>Stream and metadata provided by <a href="https://listen.moe/">https://LISTEN.moe/</a>.</p>    
     <p>
       Enjoy a clean, distraction-free listening experience with no ads, real-time song information,
       and seamless media control support so you can manage playback from anywhere on your system.
