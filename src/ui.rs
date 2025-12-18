@@ -199,14 +199,16 @@ pub fn build_ui(app: &Application) {
         let win_clone = window.clone();
         make_action("about", move || {
             let authors: Vec<_> = env!("CARGO_PKG_AUTHORS").split(':').collect();
+            let homepage = option_env!("CARGO_PKG_HOMEPAGE").unwrap_or("");
             let issues = format!("{}/issues", env!("CARGO_PKG_REPOSITORY"));
             let about = adw::AboutDialog::builder()
                 .application_name("LISTEN.moe")
                 .application_icon(APP_ID)
                 .version(env!("CARGO_PKG_VERSION"))
                 .developers(&authors[..])
-                .website(option_env!("CARGO_PKG_HOMEPAGE").unwrap_or(""))
+                .website(homepage)
                 .issue_url(issues)
+                .support_url(format!("{}/discord", homepage))
                 .license_type(gtk::License::MitX11)
                 .comments(gettext(env!("CARGO_PKG_DESCRIPTION")))
                 .build();
