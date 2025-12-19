@@ -97,6 +97,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -164,6 +167,12 @@ jobs:
             -var var.BundleDir `
             -out "wix\generated\AppFiles.wxs"
 
+      - name: Get latest tag
+        run: |
+          $latest_tag = git describe --tags $(git rev-list --tags --max-count=1)
+          echo "Latest tag: $latest_tag"
+          "LATEST_TAG=$latest_tag" >> $env:GITHUB_ENV
+
       - name: Build
         shell: pwsh
         run: |
@@ -173,7 +182,7 @@ jobs:
           Write-Host "Using candle: $candle"
           Write-Host "Using light : $light"
 
-          $ver = "${{ github.ref_name }}".TrimStart("v")
+          $ver = ${{ env.LATEST_TAG }}
 
           & $candle `
             -dBundleDir="$(Resolve-Path bundle)" `
