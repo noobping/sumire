@@ -203,12 +203,12 @@ jobs:
             -dBundleDir="$(Resolve-Path bundle)" `
             -dProductVersion="$ver" `
             -out wix\generated\ `
-            data\ListenMoe.wxs `
+            data\listenmoe.wxs `
             wix\generated\AppFiles.wxs
 
           & $light `
             -out listenmoe.msi `
-            wix\generated\ListenMoe.wixobj `
+            wix\generated\listenmoe.wixobj `
             wix\generated\AppFiles.wixobj
 
       - name: Upload MSI artifact
