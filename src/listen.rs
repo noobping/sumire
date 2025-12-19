@@ -168,16 +168,11 @@ fn run_listenmoe_stream(station: Station, rx: mpsc::Receiver<Control>) -> Result
     } else {
         "other"
     };
-    #[cfg(not(debug_assertions))]
-    let build = "release";
-    #[cfg(debug_assertions)]
-    let build = "debug";
     let useragent = format!(
-        "{}-v{}-{}-{}",
+        "{}-v{}-{}",
         env!("CARGO_PKG_NAME"),
         env!("CARGO_PKG_VERSION"),
-        platform,
-        build
+        platform
     );
     let response = client.get(url).header("User-Agent", useragent).send()?;
     #[cfg(debug_assertions)]
