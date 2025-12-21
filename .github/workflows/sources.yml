@@ -27,6 +27,11 @@ jobs:
           sudo apt-get install -y python3 python3-pip git
           python3 --version
 
+      - name: Install Python dependencies for cargo generator
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install aiohttp
+
       - name: Ensure Cargo.lock exists
         run: |
           if [ ! -f Cargo.lock ]; then
