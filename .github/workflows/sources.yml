@@ -28,11 +28,14 @@ jobs:
           sudo apt-get install -y python3 python3-pip git
           python3 --version
 
-      - name: Install Python dependencies
+      - name: Install Python deps
+        shell: bash
         run: |
-          python3 -m pip install --upgrade pip --user
+          set -euxo pipefail
+          python3 -m pip install --upgrade --user pip
           python3 -m pip install --user aiohttp tomlkit
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          python3 -m pip show tomlkit aiohttp
+          python3 -c "import tomlkit, aiohttp; print('ok', tomlkit.__version__)"
 
       - name: Ensure Cargo.lock exists
         run: |
@@ -48,11 +51,26 @@ jobs:
           rm -rf /tmp/flatpak-builder-tools
           git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git /tmp/flatpak-builder-tools
 
-      - name: Generate cargo-sources.yml
+      - name: Debug python
+        if: ${{ failure() }}
+        shell: bash
         run: |
-          python3 /tmp/flatpak-builder-tools/cargo/flatpak-cargo-generator.py \
-            --yaml Cargo.lock > cargo-sources.yml
+          set -x
+          which python3 || true
+          python3 --version || true
+          python3 -m pip --version || true
+          python3 -c "import sys; print('\n'.join(sys.path))" || true
+          ls -la || true
+          ls -la /tmp/flatpak-builder-tools/cargo || true
+          head -n 50 Cargo.lock || true
 
+      - name: Generate cargo sources
+        shell: bash
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          set -euxo pipefail
+          python3 -u /tmp/flatpak-builder-tools/cargo/flatpak-cargo-generator.py --yaml Cargo.lock | tee cargo-sources.yml
           test -s cargo-sources.yml
 
       - name: Commit and push if changed
