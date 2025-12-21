@@ -17,4 +17,4 @@ Comment[pt]=A rádio mais fofa do mundo. Desenvolvida por LISTEN.moe!
 Exec=listenmoe %u
 Icon=io.github.noobping.listenmoe
 Terminal=false
-Categories=AudioVideo;Player;
+Categories=Audio;Network;Music;Player;
