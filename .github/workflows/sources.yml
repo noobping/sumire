@@ -51,6 +51,16 @@ jobs:
           rm -rf /tmp/flatpak-builder-tools
           git clone --depth 1 https://github.com/flatpak/flatpak-builder-tools.git /tmp/flatpak-builder-tools
 
+      - name: Generate cargo sources
+        id: gen
+        shell: bash
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: |
+          set -euxo pipefail
+          python3 -u /tmp/flatpak-builder-tools/cargo/flatpak-cargo-generator.py --yaml Cargo.lock 2>&1 | tee cargo-sources.yml
+          test -s cargo-sources.yml
+
       - name: Debug python
         if: ${{ failure() }}
         shell: bash
@@ -60,18 +70,15 @@ jobs:
           python3 --version || true
           python3 -m pip --version || true
           python3 -c "import sys; print('\n'.join(sys.path))" || true
+          python3 -c "import tomlkit, aiohttp; print('tomlkit', tomlkit.__version__, 'aiohttp', aiohttp.__version__)" || true
           ls -la || true
           ls -la /tmp/flatpak-builder-tools/cargo || true
-          head -n 50 Cargo.lock || true
-
-      - name: Generate cargo sources
-        shell: bash
-        env:
-          PYTHONUNBUFFERED: "1"
-        run: |
-          set -euxo pipefail
-          python3 -u /tmp/flatpak-builder-tools/cargo/flatpak-cargo-generator.py --yaml Cargo.lock | tee cargo-sources.yml
-          test -s cargo-sources.yml
+          echo "----- Cargo.lock head -----"
+          head -n 60 Cargo.lock || true
+          echo "----- cargo-sources.yml head -----"
+          head -n 80 cargo-sources.yml || true
+          echo "----- cargo-sources.yml tail -----"
+          tail -n 80 cargo-sources.yml || true
 
       - name: Commit and push if changed
         run: |
