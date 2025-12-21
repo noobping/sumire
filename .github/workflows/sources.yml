@@ -82,16 +82,34 @@ jobs:
           tail -n 80 cargo-sources.yml || true
 
       - name: Commit and push if changed
+        shell: bash
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- cargo-sources.yml; then
-            echo "No changes to cargo-sources.yml"
+          echo "=== ls -la ==="
+          ls -la cargo-sources.yml || true
+
+          echo "=== git status (before add) ==="
+          git status --porcelain
+
+          # Make sure it's not ignored
+          echo "=== check ignore ==="
+          git check-ignore -v cargo-sources.yml || true
+
+          # Stage the file
+          git add -A cargo-sources.yml
+
+          echo "=== git status (after add) ==="
+          git status --porcelain
+
+          # If nothing staged, bail out
+          if git diff --cached --quiet; then
+            echo "No changes staged (cargo-sources.yml unchanged or ignored)."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add cargo-sources.yml
+
           git commit -m "chore(flatpak): update cargo-sources.yml"
           git push
