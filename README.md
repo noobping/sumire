@@ -25,7 +25,7 @@ flatpak-builder --user --install --force-clean flatpak-build io.github.noobping.
 Or build a AppImage:
 
 ```sh
-./po.sh
+./.appimage-po.sh
 appimage-builder --recipe .appimage-builder.yml
 ```
 
