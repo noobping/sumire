@@ -30,8 +30,8 @@ msgstr "Install"
 msgid "Uninstall"
 msgstr "Uninstall"
 
-msgid "A cute radio App. Powered by LISTEN.moe!"
-msgstr "A cute radio App. Powered by LISTEN.moe!"
+msgid "A cute little radio app. Powered by LISTEN.moe!"
+msgstr "A cute little radio app. Powered by LISTEN.moe!"
 
 msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
 msgstr "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
