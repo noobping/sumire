@@ -31,19 +31,19 @@ msgid "Uninstall"
 msgstr "Verwijderen"
 
 msgid "A cute little radio app. Powered by LISTEN.moe!"
-msgstr ""
+msgstr "Een schattige kleine radio-app. Mogelijk gemaakt door LISTEN.moe!"
 
 msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
-msgstr ""
+msgstr "Dit is een niet-officiële app voor LISTEN.moe. Streaming en metadata worden geleverd door LISTEN.moe."
 
 msgid "Listen to J-POP/K-POP"
-msgstr ""
+msgstr "Luister naar J-POP/K-POP"
 
 msgid "Pause and resume the live stream"
-msgstr ""
+msgstr "Pauzeer en hervat de livestream."
 
 msgid "Initial release."
-msgstr ""
+msgstr "Eerste versie"
 
 msgid "AI translation (GPT-5.2); reviewed by nobody"
 msgstr "AI-vertaling (GPT-5.2); Gecontroleerd door Nick"
