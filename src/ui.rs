@@ -641,8 +641,8 @@ fn apply_color(provider: &gtk::CssProvider, tint: (u8, u8, u8), tint_is_light: b
 }
 
 fn is_light_color(r: u8, g: u8, b: u8) -> bool {
-    let luma = 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32; // Relative luminance (approximate, sRGB)
-    luma > 160.0 // Threshold tuned for UI backgrounds
+    let luma = 0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32;
+    luma > 130.0
 }
 
 fn boost_saturation(r: u8, g: u8, b: u8, amount: f32) -> (u8, u8, u8) {
