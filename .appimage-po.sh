@@ -1,6 +1,6 @@
 #!/bin/sh
 APP_ID=io.github.noobping.listenmoe
-OUTDIR="${1:-AppDir/share/locale}"
+OUTDIR="${1:-AppDir/usr/share/locale}"
 
 for f in po/*.po; do
     lang=$(basename "$f" .po)
