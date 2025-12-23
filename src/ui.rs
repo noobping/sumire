@@ -15,7 +15,6 @@ use adw::{Application, StyleManager, WindowTitle};
 use gettextrs::gettext;
 #[cfg(all(target_os = "linux", feature = "controls"))]
 use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, PlatformConfig};
-#[cfg(all(target_os = "linux", feature = "controls"))]
 use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
