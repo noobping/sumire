@@ -83,9 +83,9 @@ jobs:
       - name: Locales
         run: |
           for f in po/*.po; do
-              lang=$(basename "$f" .po)
-              mkdir -p "data/locale/$lang/LC_MESSAGES"
-              msgfmt "$f" -o "data/locale/$lang/LC_MESSAGES/${APP_ID}.mo"
+            lang=$(basename "$f" .po)
+            mkdir -p "AppDir/usr/share/locale/$lang/LC_MESSAGES"
+            msgfmt "$f" -o "AppDir/usr/share/locale/$lang/LC_MESSAGES/$APP_ID.mo"
           done
 
       - name: Build AppImage
