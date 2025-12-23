@@ -6,12 +6,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "Listen.moe Radio"
-msgstr "Listen.moe Radio"
-
-msgid "JPOP/KPOP Radio"
-msgstr "JPOP/KPOP Radio"
-
 msgid "Copy title & artist"
 msgstr "Titel & Künstler kopieren"
 
@@ -23,9 +17,6 @@ msgstr "Über"
 
 msgid "Quit"
 msgstr "Beenden"
-
-msgid "A cute radio app for listen.moe"
-msgstr "Eine niedliche Radio-App für listen.moe"
 
 msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
 msgstr "Dies ist eine inoffizielle App für LISTEN.moe. Stream und Metadaten werden von LISTEN.moe bereitgestellt."

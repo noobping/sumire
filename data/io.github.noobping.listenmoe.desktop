@@ -2,8 +2,8 @@
 Version=1.0
 Type=Application
 
-Name=Listen.moe
-Comment=A cute radio app for listen.moe
+Name=ListenMoe Radio
+Comment=Listen to J-POP/K-POP
 Categories=AudioVideo;Player;
 
 Icon=io.github.noobping.listenmoe

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.noobping.listenmoe</id>
-  <name>Listen.moe</name>
-  <summary>A cute radio app for listen.moe</summary>
+  <name>ListenMoe</name>
+  <summary>Listen to J-POP/K-POP</summary>
   <description>
     <p>
       This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe.

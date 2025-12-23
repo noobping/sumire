@@ -6,12 +6,6 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Listen.moe Radio"
-msgstr ""
-
-msgid "JPOP/KPOP Radio"
-msgstr ""
-
 msgid "Copy title & artist"
 msgstr ""
 
@@ -22,9 +16,6 @@ msgid "About"
 msgstr ""
 
 msgid "Quit"
-msgstr ""
-
-msgid "A cute radio app for listen.moe"
 msgstr ""
 
 msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
