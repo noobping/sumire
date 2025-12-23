@@ -7,6 +7,7 @@ use adw::gtk::{
     self,
     gdk::{gdk_pixbuf::InterpType::Bilinear, gdk_pixbuf::Pixbuf, Display, Texture},
     gio::{Cancellable, MemoryInputStream, Menu, SimpleAction},
+    prelude::WidgetExt,
     ApplicationWindow, Button, GestureClick, HeaderBar, MenuButton, Orientation, Picture, Popover,
 };
 use adw::prelude::*;
@@ -18,6 +19,7 @@ use souvlaki::{MediaControlEvent, MediaControls, MediaMetadata, MediaPlayback, P
 use std::cell::RefCell;
 use std::error::Error;
 use std::rc::Rc;
+use std::sync::atomic::Ordering;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -28,44 +30,16 @@ const APP_ID: &str = "io.github.noobping.listenmoe_develop";
 #[cfg(not(debug_assertions))]
 const APP_ID: &str = "io.github.noobping.listenmoe";
 
-fn make_action<F>(name: &str, f: F) -> SimpleAction
-where
-    F: Fn() + 'static,
-{
-    let action = SimpleAction::new(name, None);
-    action.connect_activate(move |_, _| f());
-    action
+#[derive(Clone)]
+struct VizHandle {
+    values: Rc<RefCell<Vec<f32>>>, // 0.0..=1.0
 }
 
-fn create_station_action(
-    station: Station,
-    play_button: &Button,
-    window: &ApplicationWindow,
-    radio: &Rc<Listen>,
-    meta: &Rc<Meta>,
-) -> SimpleAction {
-    let radio = radio.clone();
-    let meta = meta.clone();
-    let win_clone = window.clone();
-    let play = play_button.clone();
-
-    make_action(station.name(), move || {
-        radio.set_station(station);
-        meta.set_station(station);
-        if play.is_visible() {
-            let _ = adw::prelude::WidgetExt::activate_action(
-                &win_clone,
-                "win.play",
-                None::<&glib::Variant>,
-            );
-        }
-    })
-}
-
-fn other_station(s: Station) -> Station {
-    match s {
-        Station::Jpop => Station::Kpop,
-        Station::Kpop => Station::Jpop,
+impl VizHandle {
+    fn set_values(&self, new_vals: &[f32]) {
+        let mut v = self.values.borrow_mut();
+        v.clear();
+        v.extend(new_vals.iter().map(|x| x.clamp(0.0, 1.0)));
     }
 }
 
@@ -75,6 +49,7 @@ fn other_station(s: Station) -> Station {
 pub fn build_ui(app: &Application) {
     let station = Station::Jpop;
     let radio = Listen::new(station);
+    let spectrum_bits = radio.spectrum_bars();
     let (tx, rx) = mpsc::channel::<TrackInfo>();
     let meta = Meta::new(station, tx, radio.lag_ms());
     let (cover_tx, cover_rx) = mpsc::channel::<Result<Vec<u8>, String>>();
@@ -346,16 +321,26 @@ pub fn build_ui(app: &Application) {
     }
     art_popover.add_controller(close_any_click);
 
-    // Tiny dummy content so GTK can shrink the window
-    let dummy = gtk::Box::new(Orientation::Vertical, 0);
-    dummy.set_height_request(0);
-    dummy.set_vexpand(false);
-
     let close_btn = Button::from_icon_name("window-close-symbolic");
     close_btn.set_action_name(Some("win.quit"));
     header.pack_end(&close_btn);
 
-    window.set_titlebar(Some(&header));
+    let overlay = gtk::Overlay::new();
+    overlay.add_css_class("titlebar-tint");
+
+    // Create bars visualizer and add it behind headerbar
+    let (viz, viz_handle) = make_bars_visualizer(48, 40);
+    overlay.set_child(Some(&viz));
+
+    header.add_css_class("viz-transparent");
+    header.add_css_class("cover-tint");
+    overlay.add_overlay(&header);
+    window.set_titlebar(Some(&overlay));
+
+    // Tiny dummy content so GTK can shrink the window
+    let dummy = gtk::Box::new(Orientation::Vertical, 0);
+    dummy.set_height_request(0);
+    dummy.set_vexpand(false);
     window.set_child(Some(&dummy));
 
     for station in [Station::Jpop, Station::Kpop] {
@@ -514,7 +499,73 @@ pub fn build_ui(app: &Application) {
         });
     }
 
+    // music animation
+    {
+        let viz = viz.clone();
+        let handle = viz_handle.clone();
+        let spectrum_bits = spectrum_bits.clone();
+
+        // UI-side smoothing (optional)
+        let mut smooth = vec![0.0f32; spectrum_bits.len()];
+
+        glib::timeout_add_local(Duration::from_millis(33), move || {
+            let mut bars = vec![0.0f32; spectrum_bits.len()];
+            for i in 0..bars.len() {
+                bars[i] = f32::from_bits(spectrum_bits[i].load(Ordering::Relaxed)).clamp(0.0, 1.0);
+            }
+
+            for i in 0..bars.len() {
+                smooth[i] = smooth[i] * 0.70 + bars[i] * 0.30;
+            }
+
+            handle.set_values(&smooth);
+            viz.queue_draw();
+            glib::ControlFlow::Continue
+        });
+    }
+
     window.present();
+}
+
+fn make_action<F>(name: &str, f: F) -> SimpleAction
+where
+    F: Fn() + 'static,
+{
+    let action = SimpleAction::new(name, None);
+    action.connect_activate(move |_, _| f());
+    action
+}
+
+fn create_station_action(
+    station: Station,
+    play_button: &Button,
+    window: &ApplicationWindow,
+    radio: &Rc<Listen>,
+    meta: &Rc<Meta>,
+) -> SimpleAction {
+    let radio = radio.clone();
+    let meta = meta.clone();
+    let win_clone = window.clone();
+    let play = play_button.clone();
+
+    make_action(station.name(), move || {
+        radio.set_station(station);
+        meta.set_station(station);
+        if play.is_visible() {
+            let _ = adw::prelude::WidgetExt::activate_action(
+                &win_clone,
+                "win.play",
+                None::<&glib::Variant>,
+            );
+        }
+    })
+}
+
+fn other_station(s: Station) -> Station {
+    match s {
+        Station::Jpop => Station::Kpop,
+        Station::Kpop => Station::Jpop,
+    }
 }
 
 /// Download an image synchronously. This helper runs in a worker thread and
@@ -592,11 +643,9 @@ fn avg_rgb_from_pixbuf(pixbuf: &Pixbuf) -> (u8, u8, u8) {
 
 fn apply_color(provider: &gtk::CssProvider, tint: (u8, u8, u8), tint_is_light: bool) {
     let (r, g, b) = tint;
-    let (fr, fg, fb) = if tint_is_light {
-        (0, 0, 0)
-    } else {
-        (255, 255, 255)
-    };
+
+    // Foreground for buttons/text
+    let (fr, fg, fb) = if tint_is_light { (0, 0, 0) } else { (255, 255, 255) };
 
     // slightly dim for backdrop
     let (br, bg, bb) = (
@@ -605,16 +654,43 @@ fn apply_color(provider: &gtk::CssProvider, tint: (u8, u8, u8), tint_is_light: b
         (b as f32 * 0.92) as u8,
     );
 
+    // viz bar color derived from the tint, but with contrast
+    let (vr, vg, vb) = if tint_is_light {
+        ((r as f32 * 0.22) as u8, (g as f32 * 0.22) as u8, (b as f32 * 0.22) as u8)
+    } else {
+        (
+            (255.0 - (255.0 - r as f32) * 0.25) as u8,
+            (255.0 - (255.0 - g as f32) * 0.25) as u8,
+            (255.0 - (255.0 - b as f32) * 0.25) as u8,
+        )
+    };
     let css = format!(
         r#"
-        headerbar.cover-tint {{
+        .titlebar-tint {{
             background: rgb({r} {g} {b});
             color: rgb({fr} {fg} {fb});
         }}
-        headerbar.cover-tint:backdrop {{
+        .titlebar-tint:backdrop {{
             background: rgb({br} {bg} {bb});
             color: rgb({fr} {fg} {fb});
         }}
+
+        .header-viz {{
+            color: rgb({vr} {vg} {vb});
+        }}
+        .header-viz:backdrop {{
+            color: rgb({vr} {vg} {vb});
+        }}
+
+        headerbar.viz-transparent {{
+            background: transparent;
+            box-shadow: none;
+        }}
+        headerbar.viz-transparent:backdrop {{
+            background: transparent;
+            box-shadow: none;
+        }}
+
         headerbar.cover-tint button {{
             color: inherit;
             background: transparent;
@@ -652,5 +728,83 @@ fn boost_saturation(r: u8, g: u8, b: u8, amount: f32) -> (u8, u8, u8) {
 }
 
 fn apply_cover_tint_css_clear(provider: &gtk::CssProvider) {
-    provider.load_from_data("");
+    provider.load_from_data(
+        r#"
+        .titlebar-tint { background: transparent; }
+        .header-viz { color: @accent_color; }
+        .header-viz:backdrop { color: @accent_color; }
+        headerbar.viz-transparent { background: transparent; box-shadow: none; }
+        headerbar.viz-transparent:backdrop { background: transparent; box-shadow: none; }
+        "#
+    );
+}
+
+fn make_bars_visualizer(n_bars: usize, height: i32) -> (gtk::DrawingArea, VizHandle) {
+    let values = Rc::new(RefCell::new(vec![0.0_f32; n_bars.max(1)]));
+    let handle = VizHandle { values: values.clone() };
+
+    let area = gtk::DrawingArea::new();
+    area.set_hexpand(true);
+    area.set_vexpand(true);
+    area.set_content_height(height);
+    area.add_css_class("header-viz");
+
+    let area_clone = area.clone();
+    area.set_draw_func(move |_, cr, w, h| {
+        let w = w as f64;
+        let h = h as f64;
+        let (r, g, b) = widget_css_color(&area_clone.clone().upcast::<gtk::Widget>());
+
+        // vertical gradient: strong at bottom/top, weak in center
+        let grad = cairo::LinearGradient::new(0.0, 0.0, 0.0, h);
+
+        // tweak these: center is where your title text is
+        let edge_a = 0.18;
+        let center_a = 0.04;
+
+        grad.add_color_stop_rgba(0.0, r, g, b, edge_a);
+        grad.add_color_stop_rgba(0.40, r, g, b, center_a);
+        grad.add_color_stop_rgba(0.60, r, g, b, center_a);
+        grad.add_color_stop_rgba(1.0, r, g, b, edge_a);
+
+        let _ = cr.set_source(&grad);
+
+        let vals = values.borrow();
+        let n = vals.len().max(1) as f64;
+
+        let gap = 1.5_f64;
+        let bar_w = (w / n).max(1.0);
+
+        for (i, v) in vals.iter().enumerate() {
+            let i = i as f64;
+            let x = i * bar_w;
+
+            let bh = (*v as f64) * (h * 0.85);
+            let y = h - bh;
+
+            cr.rectangle(x + gap, y, (bar_w - gap * 2.0).max(1.0), bh.max(1.0));
+        }
+
+        let _ = cr.fill();
+    });
+
+    (area, handle)
+}
+
+fn widget_css_color(widget: &gtk::Widget) -> (f64, f64, f64) {
+    // Read the resolved CSS "color" from this widget
+    let ctx = widget.style_context();
+    if let Some(c) = ctx.lookup_color("color") {
+        return (c.red() as f64, c.green() as f64, c.blue() as f64);
+    }
+
+    // Fallbacks that often exist in themes
+    if let Some(c) = ctx.lookup_color("theme_fg_color") {
+        return (c.red() as f64, c.green() as f64, c.blue() as f64);
+    }
+    if let Some(c) = ctx.lookup_color("window_fg_color") {
+        return (c.red() as f64, c.green() as f64, c.blue() as f64);
+    }
+
+    (1.0, 1.0, 1.0)
 }
