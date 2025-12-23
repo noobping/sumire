@@ -399,11 +399,22 @@ pub fn build_ui(app: &Application) {
         let cover_rx = cover_rx;
         let cover_tx = cover_tx.clone();
         let window = window.clone();
-        let menu = more_button.clone();
         #[cfg(all(target_os = "linux", feature = "controls"))]
         let media_controls = controls.clone();
         #[cfg(all(target_os = "linux", feature = "controls"))]
         let ctrl_rx = ctrl_rx;
+        let clear_art_ui = |art_picture: &gtk::Picture,
+                            art_popover: &gtk::Popover,
+                            style_manager: &adw::StyleManager,
+                            css_provider: &gtk::CssProvider| {
+            // Clear old cover so it doesn't stick around
+            art_picture.set_paintable(None::<&adw::gdk::Paintable>);
+
+            // Reset the rest of the UI state
+            art_popover.popdown();
+            style_manager.set_color_scheme(adw::ColorScheme::Default);
+            apply_cover_tint_css_clear(css_provider);
+        };
         glib::timeout_add_local(Duration::from_millis(100), move || {
             #[cfg(all(target_os = "linux", feature = "controls"))]
             for event in ctrl_rx.try_iter() {
@@ -428,16 +439,18 @@ pub fn build_ui(app: &Application) {
                     .as_ref()
                     .or(info.artist_image.as_ref())
                     .map(|s| s.as_str());
+
                 #[cfg(all(target_os = "linux", feature = "controls"))]
-                let mut controls = media_controls.borrow_mut();
-                #[cfg(all(target_os = "linux", feature = "controls"))]
-                let _ = controls.set_metadata(MediaMetadata {
-                    title: Some(&info.title),
-                    artist: Some(&info.artist),
-                    album: Some("LISTEN.moe"),
-                    cover_url: cover,
-                    ..Default::default()
-                });
+                {
+                    let mut controls = media_controls.borrow_mut();
+                    let _ = controls.set_metadata(MediaMetadata {
+                        title: Some(&info.title),
+                        artist: Some(&info.artist),
+                        album: Some("LISTEN.moe"),
+                        cover_url: cover, // becomes None if no cover
+                        ..Default::default()
+                    });
+                }
 
                 if let Some(url) = info.album_cover.as_ref().or(info.artist_image.as_ref()) {
                     let tx = cover_tx.clone();
@@ -447,9 +460,7 @@ pub fn build_ui(app: &Application) {
                         let _ = tx.send(result);
                     });
                 } else {
-                    art_popover.popdown();
-                    style_manager.set_color_scheme(adw::ColorScheme::Default);
-                    apply_cover_tint_css_clear(&css_provider);
+                    clear_art_ui(&art_picture, &art_popover, &style_manager, &css_provider);
                 }
             }
 
@@ -469,43 +480,32 @@ pub fn build_ui(app: &Application) {
                                 let texture = Texture::for_pixbuf(&pixbuf);
                                 art_picture.set_paintable(Some(&texture));
 
-                                // derive a strong, saturated color from the cover
                                 let (r, g, b) = avg_rgb_from_pixbuf(&pixbuf);
                                 let (r, g, b) = boost_saturation(r, g, b, 1.15);
-                                let tint = (r, g, b);
-
-                                // decide if that color is light or dark
                                 let cover_is_light = is_light_color(r, g, b);
 
-                                // force the app theme based on the cover (not system)
                                 style_manager.set_color_scheme(if cover_is_light {
                                     adw::ColorScheme::ForceLight
                                 } else {
                                     adw::ColorScheme::ForceDark
                                 });
 
-                                // paint header + popover using the exact tint color
-                                apply_color(&css_provider, tint, cover_is_light);
-
-                                let menu_popover = menu.popover().and_then(|w| w.downcast::<gtk::Popover>().ok());
-                                let menu_open = menu_popover.as_ref().map(|p| p.is_visible()).unwrap_or(false);
-                                if window.is_active() && !menu.has_focus() && !menu_open {
-                                    art_popover.popup();
-                                }
+                                apply_color(&css_provider, (r, g, b), cover_is_light);
                             }
                             Err(err) => {
                                 eprintln!("Failed to decode cover pixbuf: {err}");
-                                art_popover.popdown();
-                                style_manager.set_color_scheme(adw::ColorScheme::Default);
-                                apply_cover_tint_css_clear(&css_provider);
+                                clear_art_ui(
+                                    &art_picture,
+                                    &art_popover,
+                                    &style_manager,
+                                    &css_provider,
+                                );
                             }
                         }
                     }
                     Err(err) => {
                         eprintln!("Failed to load cover bytes: {err}");
-                        art_popover.popdown();
-                        style_manager.set_color_scheme(adw::ColorScheme::Default);
-                        apply_cover_tint_css_clear(&css_provider);
+                        clear_art_ui(&art_picture, &art_popover, &style_manager, &css_provider);
                     }
                 }
             }
