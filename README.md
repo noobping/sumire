@@ -8,6 +8,8 @@
 This is a Unofficial App for LISTEN.moe. Stream and metadata provided by [LISTEN.moe](https://listen.moe).
 Listen to J-POP and K-POP, or pause and resume the live stream.
 
+![screenshot](data/demo.gif)
+
 ![screenshot](data/io.github.noobping.listenmoe.screenshot.png)
 
 <a href="https://flathub.org/apps/details/io.github.noobping.listenmoe">
