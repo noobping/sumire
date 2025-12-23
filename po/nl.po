@@ -49,4 +49,4 @@ msgid "Fine-tuned dark/light mode detection so light colors are no longer mistak
 msgstr "De detectie van de donkere/lichtmodus is verfijnd, zodat lichte kleuren niet langer als donker worden herkend."
 
 msgid "Polished translations and improved how they are applied."
-msgstr "Vertalingen zijn verbeterd en consistenter toegepast."
+msgstr "Vertalingen zijn verbeterd."
