@@ -227,6 +227,7 @@ fn run_listenmoe_stream(
     let mut channels: u16 = 0;
     let mut sample_rate: u32 = 0;
     let mut paused = false;
+    let mut bars_enabled = true;
 
     // FFT state
     const FFT_SIZE: usize = 1024;
@@ -264,6 +265,8 @@ fn run_listenmoe_stream(
                         paused = true;
                         sink.pause();
                     }
+                    bars_enabled = false;
+                    clear_spectrum(&spectrum_bits);
                 }
                 Control::Resume => {
                     if paused {
@@ -271,6 +274,7 @@ fn run_listenmoe_stream(
                         println!("[{}] Resuming playback.", now_string());
                         paused = false;
                         sink.play();
+                        bars_enabled = true;
                     }
                 }
             }
@@ -411,8 +415,12 @@ fn run_listenmoe_stream(
             }
 
             // publish to atomics (publish smoothed bars)
-            for (i, v) in bars_smooth.iter().enumerate() {
-                spectrum_bits[i].store(v.to_bits(), Ordering::Relaxed);
+            if bars_enabled {
+                for (i, v) in bars_smooth.iter().enumerate() {
+                    spectrum_bits[i].store(v.to_bits(), Ordering::Relaxed);
+                }
+            } else {
+                clear_spectrum(&spectrum_bits);
             }
 
             // slide ring by HOP
@@ -473,5 +481,11 @@ fn bins_to_bars(mags: &[f32], sample_rate: u32, bars_out: &mut [f32]) {
         let avg = sum / ((hi - lo) as f32);
 
         bars_out[i] = avg;
+    }
+}
+
+fn clear_spectrum(spectrum_bits: &Arc<Vec<AtomicU32>>) {
+    for a in spectrum_bits.iter() {
+        a.store(0.0f32.to_bits(), Ordering::Relaxed);
     }
 }
