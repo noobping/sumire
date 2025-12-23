@@ -56,6 +56,9 @@
       <image>
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
       <caption>Main window when connected</caption>
+      <image>
+        https://raw.githubusercontent.com/noobping/listenmoe/main/data/demo.png</image>
+      <caption>Sound animations in the background</caption>
     </screenshot>
   </screenshots>
 
