@@ -64,7 +64,7 @@
   </provides>
 
   <releases>
-    <release version="1.0.1" date="2025-12-29">
+    <release version="1.0.1" date="2025-12-23">
       <description>
         <p>
           This release focuses on visuals and localization.
