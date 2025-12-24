@@ -658,7 +658,7 @@ fn apply_color(provider: &gtk::CssProvider, tint: (u8, u8, u8), tint_is_light: b
 
     // viz bar color derived from the tint, but with contrast
     let (vr, vg, vb) = if tint_is_light {
-        ((r as f32 * 0.14) as u8, (g as f32 * 0.14) as u8, (b as f32 * 0.14) as u8)
+        ((r as f32 * 0.25) as u8, (g as f32 * 0.25) as u8, (b as f32 * 0.25) as u8)
     } else {
         (
             (255.0 - (255.0 - r as f32) * 0.25) as u8,
@@ -666,7 +666,7 @@ fn apply_color(provider: &gtk::CssProvider, tint: (u8, u8, u8), tint_is_light: b
             (255.0 - (255.0 - b as f32) * 0.25) as u8,
         )
     };
-    let (vr, vg, vb) = boost_saturation(vr, vg, vb, 1.35);
+    let (vr, vg, vb) = boost_saturation(vr, vg, vb, 1.25);
     let css = format!(
         r#"
         .titlebar-tint {{
