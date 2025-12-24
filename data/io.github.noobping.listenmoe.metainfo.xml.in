@@ -63,6 +63,11 @@
   <screenshots>
     <screenshot type="default" xml:lang="en">
       <image>
+        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
+      <caption>When connected and there is no album or artist image</caption>
+    </screenshot>
+    <screenshot xml:lang="en">
+      <image>
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot_blue.png</image>
       <caption>Blue colored window when connected</caption>
     </screenshot>
@@ -73,18 +78,8 @@
     </screenshot>
     <screenshot xml:lang="en">
       <image>
-        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.screenshot_light.png</image>
-      <caption>Light colored window when disconnected</caption>
-    </screenshot>
-    <screenshot xml:lang="en">
-      <image>
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.screenshot_pink.png</image>
       <caption>Pink colored window when disconnected</caption>
-    </screenshot>
-    <screenshot xml:lang="en">
-      <image>
-        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.screenshot_gold.png</image>
-      <caption>Gold colored window when disconnected</caption>
     </screenshot>
   </screenshots>
 
