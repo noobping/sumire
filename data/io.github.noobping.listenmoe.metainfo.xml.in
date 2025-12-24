@@ -64,12 +64,12 @@
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
       <caption>Window when connected</caption>
     </screenshot>
-    <screenshot type="default" xml:lang="en">
+    <screenshot xml:lang="en">
       <image>
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.light.png</image>
       <caption>Light window when disconnected</caption>
     </screenshot>
-    <screenshot type="default" xml:lang="en">
+    <screenshot xml:lang="en">
       <image>
         https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.dark.png</image>
       <caption>Dark window when disconnected</caption>
