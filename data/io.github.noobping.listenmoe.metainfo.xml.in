@@ -29,7 +29,7 @@
   <url type="vcs-browser">https://github.com/noobping/listenmoe</url>
 
   <branding>
-    <color type="primary" scheme_preference="light">#99c1f1</color>
+    <color type="primary" scheme_preference="light">#ffa348</color>
     <color type="primary" scheme_preference="dark">#ff015b</color>
   </branding>
 
