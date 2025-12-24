@@ -2340,13 +2340,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/serde_json/serde_json-1.0.146.crate
-  sha256: 217ca874ae0207aac254aa02c957ded05585a90892cc8d87f9e5fa49669dadd8
-  dest: cargo/vendor/serde_json-1.0.146
+  url: https://static.crates.io/crates/serde_json/serde_json-1.0.147.crate
+  sha256: 6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4
+  dest: cargo/vendor/serde_json-1.0.147
 - type: inline
-  contents: '{"package": "217ca874ae0207aac254aa02c957ded05585a90892cc8d87f9e5fa49669dadd8",
+  contents: '{"package": "6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4",
     "files": {}}'
-  dest: cargo/vendor/serde_json-1.0.146
+  dest: cargo/vendor/serde_json-1.0.147
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -2680,13 +2680,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/tempfile/tempfile-3.23.0.crate
-  sha256: 2d31c77bdf42a745371d260a26ca7163f1e0924b64afa0b688e61b5a9fa02f16
-  dest: cargo/vendor/tempfile-3.23.0
+  url: https://static.crates.io/crates/tempfile/tempfile-3.24.0.crate
+  sha256: 655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c
+  dest: cargo/vendor/tempfile-3.24.0
 - type: inline
-  contents: '{"package": "2d31c77bdf42a745371d260a26ca7163f1e0924b64afa0b688e61b5a9fa02f16",
+  contents: '{"package": "655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c",
     "files": {}}'
-  dest: cargo/vendor/tempfile-3.23.0
+  dest: cargo/vendor/tempfile-3.24.0
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -3887,6 +3887,16 @@
   contents: '{"package": "eadce39539ca5cb3985590102671f2567e659fca9666581ad3411d59207951f3",
     "files": {}}'
   dest: cargo/vendor/zerovec-derive-0.11.2
+  dest-filename: .cargo-checksum.json
+- type: archive
+  archive-type: tar-gzip
+  url: https://static.crates.io/crates/zmij/zmij-0.1.7.crate
+  sha256: 9e404bcd8afdaf006e529269d3e85a743f9480c3cef60034d77860d02964f3ba
+  dest: cargo/vendor/zmij-0.1.7
+- type: inline
+  contents: '{"package": "9e404bcd8afdaf006e529269d3e85a743f9480c3cef60034d77860d02964f3ba",
+    "files": {}}'
+  dest: cargo/vendor/zmij-0.1.7
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
