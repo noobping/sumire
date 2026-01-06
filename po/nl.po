@@ -18,8 +18,8 @@ msgstr "Over"
 msgid "Quit"
 msgstr "Afsluiten"
 
-msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
-msgstr "Dit is een niet-officiële app voor LISTEN.moe. Streaming en metadata worden geleverd door LISTEN.moe."
+msgid "It is time to ditch other radios. Stream and metadata provided by LISTEN.moe."
+msgstr "Het is tijd om andere radio’s achter je te laten. Streaming en metadata worden geleverd door LISTEN.moe."
 
 msgid "J-POP and K-POP radio"
 msgstr "J-POP- en K-POP-radio"

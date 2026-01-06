@@ -176,7 +176,7 @@ pub fn build_ui(app: &Application) {
             let authors: Vec<_> = env!("CARGO_PKG_AUTHORS").split(':').collect();
             let homepage = option_env!("CARGO_PKG_HOMEPAGE").unwrap_or("");
             let issues = format!("{}/issues", env!("CARGO_PKG_REPOSITORY"));
-            let comments = gettext("This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe.");
+            let comments = gettext("It is time to ditch other radios. Stream and metadata provided by LISTEN.moe.");
             let about = adw::AboutDialog::builder()
                 .application_name("Listen Moe")
                 .application_icon(APP_ID)

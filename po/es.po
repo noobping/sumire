@@ -18,8 +18,8 @@ msgstr "Acerca de"
 msgid "Quit"
 msgstr "Salir"
 
-msgid "This is an unofficial app for LISTEN.moe. Stream and metadata provided by LISTEN.moe."
-msgstr "Esta es una app no oficial para LISTEN.moe. El stream y los metadatos son proporcionados por LISTEN.moe."
+msgid "It is time to ditch other radios. Stream and metadata provided by LISTEN.moe."
+msgstr "Es hora de dejar atrás otras radios. El stream y los metadatos son proporcionados por LISTEN.moe."
 
 msgid "J-POP and K-POP radio"
 msgstr "Radio de J-POP y K-POP"
