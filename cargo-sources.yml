@@ -540,13 +540,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/data-encoding/data-encoding-2.9.0.crate
-  sha256: 2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476
-  dest: cargo/vendor/data-encoding-2.9.0
+  url: https://static.crates.io/crates/data-encoding/data-encoding-2.10.0.crate
+  sha256: d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea
+  dest: cargo/vendor/data-encoding-2.10.0
 - type: inline
-  contents: '{"package": "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476",
+  contents: '{"package": "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea",
     "files": {}}'
-  dest: cargo/vendor/data-encoding-2.9.0
+  dest: cargo/vendor/data-encoding-2.10.0
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
