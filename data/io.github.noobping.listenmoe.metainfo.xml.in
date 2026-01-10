@@ -63,15 +63,20 @@
   <launchable type="desktop-id">io.github.noobping.listenmoe.desktop</launchable>
 
   <screenshots>
-    <screenshot type="default" xml:lang="en">
+    <screenshot type="default">
       <image>
-        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot.png</image>
+        https://raw.githubusercontent.com/noobping/listenmoe/v1.0.5/data/io.github.noobping.listenmoe.screenshot.png</image>
       <caption>When connected and there is no album or artist image</caption>
     </screenshot>
-    <screenshot xml:lang="en">
+    <screenshot>
       <image>
-        https://raw.githubusercontent.com/noobping/listenmoe/main/data/io.github.noobping.listenmoe.screenshot_blue.png</image>
+        https://raw.githubusercontent.com/noobping/listenmoe/v1.0.5/data/io.github.noobping.listenmoe.screenshot_color.png</image>
       <caption>Colored window when connected</caption>
+    </screenshot>
+    <screenshot>
+      <image>
+        https://raw.githubusercontent.com/noobping/listenmoe/v1.0.5/data/io.github.noobping.listenmoe.screenshot_popover.png</image>
+      <caption>Album or artist image popover</caption>
     </screenshot>
   </screenshots>
 
