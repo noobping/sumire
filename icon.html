@@ -1,241 +1,121 @@
 <!doctype html>
 <html lang="nl">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>SVG Overlay</title>
-    <style>
-        :root {
-            color-scheme: light dark;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SVG Overlay</title>
+  <style>
+    :root { color-scheme: light dark; }
 
-        body {
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-            margin: 24px;
-        }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    label { display: grid; gap: 6px; }
+    input[type="file"] { width: 320px; }
 
-        .row {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: end;
-        }
+    .frame {
+      width: min(900px, 100%);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      border-radius: 12px;
+      background:
+        linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 0 0/20px 20px,
+        linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 0 0/20px 20px,
+        linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 10px 10px/20px 20px,
+        linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 10px 10px/20px 20px;
+    }
 
-        label {
-            display: grid;
-            gap: 6px;
-        }
+    .layer {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+    .layer svg { width: 100%; height: 100%; display: block; }
 
-        input[type="file"] {
-            width: 320px;
-        }
-
-        .controls {
-            margin: 14px 0 18px;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .frame {
-            width: min(900px, 100%);
-            aspect-ratio: 16 / 9;
-            border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-            border-radius: 12px;
-            position: relative;
-            overflow: hidden;
-            background:
-                linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 0 0 / 20px 20px,
-                linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 0 0 / 20px 20px,
-                linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 10px 10px / 20px 20px,
-                linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 10px 10px / 20px 20px;
-        }
-
-        .layer {
-            position: absolute;
-            inset: 0;
-            display: grid;
-            place-items: center;
-            pointer-events: none;
-        }
-
-        .layer svg {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        /* Layer 2: always visible with auto-contrast */
-        #layerB {
-            color: black;
-            mix-blend-mode: difference;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            #layerB {
-                color: white;
-            }
-        }
-
-        @media (prefers-reduced-transparency: reduce) {
-            #layerB {
-                mix-blend-mode: normal;
-                color: currentColor;
-            }
-        }
-
-        .pill {
-            padding: 6px 10px;
-            border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-            border-radius: 999px;
-        }
-
-        .hint {
-            opacity: .75;
-            margin-top: 10px;
-            line-height: 1.4;
-        }
-    </style>
+    /* Grid (layer 2): high visibility */
+    #layerB { color: black; mix-blend-mode: difference; }
+    @media (prefers-color-scheme: dark) { #layerB { color: white; } }
+    @media (prefers-reduced-transparency: reduce) { #layerB { mix-blend-mode: normal; } }
+  </style>
 </head>
 
 <body>
-    <h1>SVG Overlay</h1>
+  <h1>SVG Overlay</h1>
 
-    <div class="row">
-        <label>
-            <span>Onderste SVG (laag 1)</span>
-            <input id="fileA" type="file" accept=".svg,image/svg+xml" />
-        </label>
-    </div>
+  <label>
+    <span>Onderste SVG (laag 1)</span>
+    <input id="fileA" type="file" accept=".svg,image/svg+xml" />
+  </label>
 
-    <div class="controls">
-        <label class="pill">
-            <input id="showA" type="checkbox" checked />
-            Toon laag 1
-        </label>
+  <div class="frame" style="margin-top: 16px;">
+    <div class="layer" id="layerA" aria-label="Laag 1"></div>
+    <div class="layer" id="layerB" aria-label="Laag 2"></div>
+  </div>
 
-        <label class="pill">
-            <input id="showB" type="checkbox" checked />
-            Toon laag 2 (grid)
-        </label>
-    </div>
+  <script>
+    const fileA  = document.getElementById("fileA");
+    const layerA = document.getElementById("layerA");
+    const layerB = document.getElementById("layerB");
 
-    <div class="frame" id="frame">
-        <div class="layer" id="layerA" aria-label="Laag 1"></div>
-        <div class="layer" id="layerB" aria-label="Laag 2"></div>
-    </div>
-
-    <script>
-        const fileA = document.getElementById("fileA");
-        const layerA = document.getElementById("layerA");
-        const layerB = document.getElementById("layerB");
-
-        const showA = document.getElementById("showA");
-        const showB = document.getElementById("showB");
-
-        // ====== Layer 2: vaste SVG (grid) ======
-        const LAYER2_SVG = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    const GRID_SVG = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg width="128.00002" height="127.99999" viewBox="0 0 33.866671 33.866665" version="1.1" id="svg1" inkscape:version="1.3 (0e150ed6c4, 2023-07-21)" sodipodi:docname="grid1.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
   <sodipodi:namedview id="namedview1" pagecolor="#ffffff" bordercolor="currentColor" borderopacity="0.25" inkscape:showpageshadow="2" inkscape:pageopacity="0.0" inkscape:pagecheckerboard="0" inkscape:deskcolor="#d1d1d1" inkscape:document-units="px" inkscape:zoom="1" inkscape:cx="41.5" inkscape:cy="68" inkscape:window-width="1920" inkscape:window-height="1011" inkscape:window-x="0" inkscape:window-y="0" inkscape:window-maximized="1" inkscape:current-layer="layer1"/>
   <defs id="defs1"/>
   <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(-32.279167,-138.64166)">
-    <circle cx="49.212509" cy="155.575" r="15.743801" id="circle2892" style="display:inline;opacity:0.2;fill:none;fill-opacity:1;stroke:currentColor;stroke-width:0.2619375;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal;enable-background:new"/>
-    <rect ry="2.096508" rx="2.096508" y="141.94769" x="35.585205" height="27.254602" width="27.254602" id="rect2896" style="display:inline;opacity:0.2;fill:none;fill-opacity:1;stroke:currentColor;stroke-width:0.2619375;stroke-linecap:butt;stroke-linejoin:miter;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;marker-start:none;marker-mid:none;marker-end:none;paint-order:normal;enable-background:new"/>
+    <circle cx="49.212509" cy="155.575" r="15.743801" id="circle2892"
+      style="opacity:0.2;fill:none;stroke:currentColor;stroke-width:0.2619375;stroke-dasharray:none;stroke-opacity:1"/>
+    <rect ry="2.096508" rx="2.096508" y="141.94769" x="35.585205" height="27.254602" width="27.254602" id="rect2896"
+      style="opacity:0.2;fill:none;stroke:currentColor;stroke-width:0.2619375;stroke-dasharray:none;stroke-opacity:1"/>
   </g>
 </svg>`;
 
-        function parseSvgTextToElement(svgText) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(svgText, "image/svg+xml");
-            const svg = doc.documentElement;
+    function toSvgElement(svgText) {
+      const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+      const svg = doc.documentElement;
+      if (!svg || svg.nodeName.toLowerCase() !== "svg") throw new Error("Geen geldige SVG.");
 
-            if (!svg || svg.nodeName.toLowerCase() !== "svg") {
-                throw new Error("Geen geldige SVG.");
-            }
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", "100%");
+      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      return svg;
+    }
 
-            // overlay scaling:
-            svg.setAttribute("width", "100%");
-            svg.setAttribute("height", "100%");
-            svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    function ensureViewBox(svg) {
+      if (svg.getAttribute("viewBox")) return;
 
-            return svg;
-        }
+      // Needs to be in DOM for getBBox() to work reliably
+      const old = svg.style.visibility;
+      svg.style.visibility = "hidden";
+      try {
+        const b = svg.getBBox();
+        const w = b.width  > 0 ? b.width  : 100;
+        const h = b.height > 0 ? b.height : 100;
+        svg.setAttribute("viewBox", `${b.x || 0} ${b.y || 0} ${w} ${h}`);
+      } catch {
+        svg.setAttribute("viewBox", "0 0 100 100");
+      } finally {
+        svg.style.visibility = old;
+      }
+    }
 
-        function ensureViewBox(svg) {
-            const hasViewBox = svg.hasAttribute("viewBox") && svg.getAttribute("viewBox").trim().length > 0;
-            if (hasViewBox) return;
+    // Init grid layer (always present)
+    (function initGrid() {
+      const grid = toSvgElement(GRID_SVG);
+      layerB.replaceChildren(grid);
+      // force strokes to follow currentColor (so CSS can invert)
+      grid.querySelectorAll("[stroke], [style*='stroke:']").forEach(el => el.setAttribute("stroke", "currentColor"));
+    })();
 
-            const prevVisibility = svg.style.visibility;
-            svg.style.visibility = "hidden";
+    fileA.addEventListener("change", async () => {
+      const f = fileA.files?.[0];
+      if (!f) return;
 
-            try {
-                const bbox = svg.getBBox();
-                const wAttr = parseFloat(svg.getAttribute("width")) || 100;
-                const hAttr = parseFloat(svg.getAttribute("height")) || 100;
-
-                const x = Number.isFinite(bbox.x) ? bbox.x : 0;
-                const y = Number.isFinite(bbox.y) ? bbox.y : 0;
-                const w = (Number.isFinite(bbox.width) && bbox.width > 0) ? bbox.width : wAttr;
-                const h = (Number.isFinite(bbox.height) && bbox.height > 0) ? bbox.height : hAttr;
-
-                svg.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
-            } catch {
-                svg.setAttribute("viewBox", "0 0 100 100");
-            } finally {
-                svg.style.visibility = prevVisibility;
-            }
-        }
-
-        async function setLayerFromFile(layerEl, file) {
-            const txt = await file.text();
-            const svg = parseSvgTextToElement(txt);
-
-            layerEl.replaceChildren(svg);
-            ensureViewBox(svg);
-        }
-
-        function forceGridToUseCurrentColor(svg) {
-            // Ensure everything in layer 2 strokes with currentColor so CSS can flip black/white.
-            // This overrides Inkscape inline styles like stroke:currentColor (already ok) and any hardcoded colors.
-            svg.querySelectorAll("*").forEach(el => {
-                if (!(el instanceof Element)) return;
-                // set presentation attributes (stronger than some CSS in practice)
-                if (el.hasAttribute("stroke") || (el.getAttribute("style") || "").includes("stroke:")) {
-                    el.setAttribute("stroke", "currentColor");
-                }
-                // if any fills exist and you want them contrasting too, uncomment:
-                if (el.hasAttribute("fill") || (el.getAttribute("style") || "").includes("fill:")) {
-                    el.setAttribute("fill", "none");
-                }
-            });
-        }
-
-        function updateUi() {
-            layerA.style.display = showA.checked ? "grid" : "none";
-            layerB.style.display = showB.checked ? "grid" : "none";
-            layerB.style.opacity = "1"; // always 1.00
-        }
-
-        // init fixed layer 2
-        (function initLayer2() {
-            const svgB = parseSvgTextToElement(LAYER2_SVG);
-            layerB.replaceChildren(svgB);
-            ensureViewBox(svgB);
-            forceGridToUseCurrentColor(svgB);
-        })();
-
-        fileA.addEventListener("change", async () => {
-            if (!fileA.files?.[0]) return;
-            await setLayerFromFile(layerA, fileA.files[0]);
-        });
-
-        showA.addEventListener("change", updateUi);
-        showB.addEventListener("change", updateUi);
-
-        updateUi();
-    </script>
+      const svg = toSvgElement(await f.text());
+      layerA.replaceChildren(svg);
+      ensureViewBox(svg);
+    });
+  </script>
 </body>
-
 </html>
