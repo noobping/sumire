@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SVG Overlay</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; align-items: end; }
+    label { display: grid; gap: 6px; }
+    input[type="file"] { width: 280px; }
+    .controls { margin: 14px 0 18px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+    .frame {
+      width: min(900px, 100%);
+      aspect-ratio: 16 / 9;
+      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 0 0 / 20px 20px,
+        linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 0 0 / 20px 20px,
+        linear-gradient(45deg, transparent 75%, color-mix(in srgb, currentColor 10%, transparent) 75%) 10px 10px / 20px 20px,
+        linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 10px 10px / 20px 20px;
+    }
+    .layer {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+    .layer svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .hint { opacity: .75; margin-top: 10px; line-height: 1.4; }
+    .pill { padding: 6px 10px; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <h1>SVG Overlay</h1>
+
+  <div class="row">
+    <label>
+      <span>Onderste SVG (laag 1)</span>
+      <input id="fileA" type="file" accept=".svg,image/svg+xml" />
+    </label>
+    <label>
+      <span>Bovenste SVG (laag 2)</span>
+      <input id="fileB" type="file" accept=".svg,image/svg+xml" />
+    </label>
+  </div>
+
+  <div class="controls">
+    <label class="pill">
+      Opacity laag 2:
+      <input id="opacity" type="range" min="0" max="1" step="0.01" value="0.6" />
+      <span id="opacityVal">0.60</span>
+    </label>
+
+    <label class="pill">
+      <input id="showA" type="checkbox" checked />
+      Toon laag 1
+    </label>
+
+    <label class="pill">
+      <input id="showB" type="checkbox" checked />
+      Toon laag 2
+    </label>
+
+    <button id="loadDemo" class="pill" type="button">Laad demo</button>
+  </div>
+
+  <div class="frame" id="frame">
+    <div class="layer" id="layerA" aria-label="Laag 1"></div>
+    <div class="layer" id="layerB" aria-label="Laag 2"></div>
+  </div>
+
+  <p class="hint">
+    Tip: beide SVG’s worden “fit to frame” geschaald (klein → groter, groot → kleiner) en gecentreerd.
+    Als je SVG geen <code>viewBox</code> heeft, wordt die automatisch gezet op basis van de inhoud.
+  </p>
+
+<script>
+  const fileA = document.getElementById("fileA");
+  const fileB = document.getElementById("fileB");
+  const layerA = document.getElementById("layerA");
+  const layerB = document.getElementById("layerB");
+
+  const opacity = document.getElementById("opacity");
+  const opacityVal = document.getElementById("opacityVal");
+  const showA = document.getElementById("showA");
+  const showB = document.getElementById("showB");
+  const loadDemo = document.getElementById("loadDemo");
+
+  function parseSvgTextToElement(svgText) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgText, "image/svg+xml");
+    const svg = doc.documentElement;
+
+    if (!svg || svg.nodeName.toLowerCase() !== "svg") {
+      throw new Error("Bestand bevat geen geldige SVG.");
+    }
+
+    // Belangrijk voor overlay scaling:
+    // - width/height 100% => schaalt mee met frame
+    // - preserveAspectRatio meet => past binnen frame (klein->groot, groot->klein)
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", "100%");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+    // Zorg dat we een viewBox hebben (veel 'exported' SVG's missen dit)
+    // getBBox() werkt pas wanneer de svg in de DOM zit, dus doen we dat in ensureViewBox()
+    return svg;
+  }
+
+  function ensureViewBox(svg) {
+    const hasViewBox = svg.hasAttribute("viewBox") && svg.getAttribute("viewBox").trim().length > 0;
+    if (hasViewBox) return;
+
+    // Tijdelijk zichtbaar maken voor bbox berekening
+    const prevVisibility = svg.style.visibility;
+    svg.style.visibility = "hidden";
+
+    // Sommige SVG's hebben geen contentBBox als er geen shapes zijn; try/catch voor safety
+    try {
+      const bbox = svg.getBBox();
+      // Als bbox "leeg" is, val terug op width/height attribuut of 0..100
+      const wAttr = parseFloat(svg.getAttribute("width")) || 100;
+      const hAttr = parseFloat(svg.getAttribute("height")) || 100;
+
+      const x = Number.isFinite(bbox.x) ? bbox.x : 0;
+      const y = Number.isFinite(bbox.y) ? bbox.y : 0;
+      const w = (Number.isFinite(bbox.width) && bbox.width > 0) ? bbox.width : wAttr;
+      const h = (Number.isFinite(bbox.height) && bbox.height > 0) ? bbox.height : hAttr;
+
+      svg.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
+    } catch {
+      svg.setAttribute("viewBox", "0 0 100 100");
+    } finally {
+      svg.style.visibility = prevVisibility;
+    }
+  }
+
+  async function readFileAsText(file) {
+    return await file.text();
+  }
+
+  async function setLayerFromFile(layerEl, file) {
+    const txt = await readFileAsText(file);
+    const svg = parseSvgTextToElement(txt);
+
+    // Inline in DOM zetten
+    layerEl.replaceChildren(svg);
+
+    // Daarna viewBox fixen indien nodig
+    ensureViewBox(svg);
+  }
+
+  function updateUi() {
+    opacityVal.textContent = Number(opacity.value).toFixed(2);
+    layerB.style.opacity = opacity.value;
+
+    layerA.style.display = showA.checked ? "grid" : "none";
+    layerB.style.display = showB.checked ? "grid" : "none";
+  }
+
+  fileA.addEventListener("change", async () => {
+    if (!fileA.files?.[0]) return;
+    await setLayerFromFile(layerA, fileA.files[0]);
+  });
+
+  fileB.addEventListener("change", async () => {
+    if (!fileB.files?.[0]) return;
+    await setLayerFromFile(layerB, fileB.files[0]);
+  });
+
+  opacity.addEventListener("input", updateUi);
+  showA.addEventListener("change", updateUi);
+  showB.addEventListener("change", updateUi);
+
+  loadDemo.addEventListener("click", () => {
+    const demo1 = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="180" height="180">
+        <rect x="10" y="10" width="160" height="160" rx="20" fill="none" stroke="currentColor" stroke-width="8"/>
+        <circle cx="90" cy="90" r="46" fill="none" stroke="currentColor" stroke-width="8"/>
+      </svg>`;
+    const demo2 = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="600" height="260">
+        <path d="M30 130 C 140 20, 260 240, 380 130 S 560 240, 570 130"
+              fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="round"/>
+        <text x="30" y="50" font-size="42" font-family="system-ui">Overlay</text>
+      </svg>`;
+
+    const svgA = parseSvgTextToElement(demo1);
+    const svgB = parseSvgTextToElement(demo2);
+
+    layerA.replaceChildren(svgA);
+    layerB.replaceChildren(svgB);
+
+    ensureViewBox(svgA);
+    ensureViewBox(svgB);
+
+    opacity.value = "0.6";
+    showA.checked = true;
+    showB.checked = true;
+    updateUi();
+  });
+
+  // init
+  updateUi();
+</script>
+</body>
+</html>
