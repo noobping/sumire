@@ -16,7 +16,7 @@
       aspect-ratio: 16 / 9;
       position: relative;
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      border: 1px solid color-mix(in srgb, currentColor 50%, transparent);
       border-radius: 12px;
       background:
         linear-gradient(45deg, color-mix(in srgb, currentColor 10%, transparent) 25%, transparent 25%) 0 0/20px 20px,
@@ -42,10 +42,8 @@
 </head>
 
 <body>
-  <h1>SVG Overlay</h1>
-
   <label>
-    <span>Onderste SVG (laag 1)</span>
+    <h1>Test SVG Icon</h1>
     <input id="fileA" type="file" accept=".svg,image/svg+xml" />
   </label>
 
@@ -90,7 +88,7 @@
       }
     }
 
-    // Init grid layer (always present)
+    // Init grid layer
     (function initGrid() {
       const grid = toSvgElement(GRID_SVG);
       layerB.replaceChildren(grid);
