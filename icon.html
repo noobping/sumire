@@ -220,7 +220,10 @@
         });
 
         function stopDrag() {
-        dragging = false;
+            if (dragging && selected) {
+                syncSvgToEditor(svgRoot);
+            }
+            dragging = false;
         }
 
         svgRoot.addEventListener("pointerup", stopDrag);
@@ -228,14 +231,24 @@
         svgRoot.addEventListener("lostpointercapture", stopDrag);
 
         svgRoot.addEventListener("wheel", (e) => {
-        if (!selected) return;
-        e.preventDefault();
+            if (!selected) return;
+            e.preventDefault();
 
-        const st = getState(selected);
-        const factor = e.deltaY < 0 ? 1.05 : 0.95;
-        const next = Math.min(20, Math.max(0.05, st.sc * factor));
-        setState(selected, st.tx, st.ty, next);
+            const st = getState(selected);
+            const factor = e.deltaY < 0 ? 1.05 : 0.95;
+            const next = Math.min(20, Math.max(0.05, st.sc * factor));
+            setState(selected, st.tx, st.ty, next);
+            syncSvgToEditor(svgRoot);
         }, { passive: false });
+    }
+
+    let syncTimer = null;
+    function syncSvgToEditor(svgRoot) {
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+        const serializer = new XMLSerializer();
+        svgText.textContent = serializer.serializeToString(svgRoot);
+        }, 150);
     }
     
     // Very basic formatter for XML (good enough for quick edits)
