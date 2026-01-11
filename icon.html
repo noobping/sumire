@@ -207,10 +207,10 @@
                 if (el.hasAttribute("stroke") || (el.getAttribute("style") || "").includes("stroke:")) {
                     el.setAttribute("stroke", "currentColor");
                 }
-                // optional: if any fills exist and you want them contrasting too, uncomment:
-                // if (el.hasAttribute("fill") || (el.getAttribute("style") || "").includes("fill:")) {
-                //   el.setAttribute("fill", "none");
-                // }
+                // if any fills exist and you want them contrasting too, uncomment:
+                if (el.hasAttribute("fill") || (el.getAttribute("style") || "").includes("fill:")) {
+                  el.setAttribute("fill", "none");
+                }
             });
         }
 
