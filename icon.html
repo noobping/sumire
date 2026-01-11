@@ -6,16 +6,48 @@
   <title>SVG Overlay</title>
   <style>
     :root { color-scheme: light dark; }
-
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+
+    .top { display: grid; gap: 10px; max-width: 900px; }
     label { display: grid; gap: 6px; }
     input[type="file"] { width: 320px; }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.35;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      background: color-mix(in srgb, Canvas 95%, transparent);
+      resize: vertical;
+    }
+
+    .bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    button {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+      background: color-mix(in srgb, Canvas 90%, transparent);
+      cursor: pointer;
+    }
+    button:active { transform: translateY(1px); }
+
+    .status { opacity: .8; }
 
     .frame {
       width: min(900px, 100%);
       aspect-ratio: 16 / 9;
       position: relative;
       overflow: hidden;
+      margin-top: 14px;
       border: 1px solid color-mix(in srgb, currentColor 50%, transparent);
       border-radius: 12px;
       background:
@@ -34,7 +66,7 @@
     }
     .layer svg { width: 100%; height: 100%; display: block; }
 
-    /* Grid (layer 2): high visibility */
+    /* Grid overlay */
     #layerB { color: black; mix-blend-mode: difference; }
     @media (prefers-color-scheme: dark) { #layerB { color: white; } }
     @media (prefers-reduced-transparency: reduce) { #layerB { mix-blend-mode: normal; } }
@@ -42,27 +74,46 @@
 </head>
 
 <body>
-  <label>
+  <div class="top">
     <h1>Test SVG Icon</h1>
-    <input id="fileA" type="file" accept=".svg,image/svg+xml" />
-  </label>
 
-  <div class="frame" style="margin-top: 16px;">
+    <label>
+      <span>Upload SVG icon</span>
+      <input id="fileA" type="file" accept=".svg,image/svg+xml" />
+    </label>
+
+    <label>
+      <span>Edit SVG XML</span>
+      <textarea id="svgText" placeholder="Upload een SVG, of plak hier SVG XML..."></textarea>
+    </label>
+
+    <div class="bar">
+      <button id="applyBtn" type="button">Apply</button>
+      <button id="formatBtn" type="button">Format</button>
+      <span class="status" id="status">—</span>
+    </div>
+  </div>
+
+  <div class="frame">
     <div class="layer" id="layerA" aria-label="Laag 1"></div>
     <div class="layer" id="layerB" aria-label="Laag 2"></div>
   </div>
 
   <script>
-    const fileA  = document.getElementById("fileA");
-    const layerA = document.getElementById("layerA");
-    const layerB = document.getElementById("layerB");
+    const fileA   = document.getElementById("fileA");
+    const layerA  = document.getElementById("layerA");
+    const layerB  = document.getElementById("layerB");
+    const svgText = document.getElementById("svgText");
+    const status  = document.getElementById("status");
+    const applyBtn  = document.getElementById("applyBtn");
+    const formatBtn = document.getElementById("formatBtn");
 
-    const GRID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33.867 33.867"><g fill="none" stroke="currentColor" stroke-width=".262" transform="translate(-32.28 -138.642)"><circle cx="49.213" cy="155.575" r="15.744" opacity=".2" style="marker:none"/><rect width="27.255" height="27.255" x="35.585" y="141.948" opacity=".2" rx="2.097" ry="2.097" style="marker:none"/></g></svg>`;
+    const GRID_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33.867 33.867"><g fill="none" stroke="currentColor" stroke-width=".262" transform="translate(-32.28 -138.642)"><circle cx="49.213" cy="155.575" r="15.744" opacity=".2"/><rect width="27.255" height="27.255" x="35.585" y="141.948" opacity=".2" rx="2.097" ry="2.097"/></g></svg>`;
 
-    function toSvgElement(svgText) {
-      const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+    function toSvgElement(svgXml) {
+      const doc = new DOMParser().parseFromString(svgXml, "image/svg+xml");
       const svg = doc.documentElement;
-      if (!svg || svg.nodeName.toLowerCase() !== "svg") throw new Error("Geen geldige SVG.");
+      if (!svg || svg.nodeName.toLowerCase() !== "svg") throw new Error("Geen geldige SVG (geen <svg> root).");
 
       svg.setAttribute("width", "100%");
       svg.setAttribute("height", "100%");
@@ -72,15 +123,11 @@
 
     function ensureViewBox(svg) {
       if (svg.getAttribute("viewBox")) return;
-
-      // Needs to be in DOM for getBBox() to work reliably
       const old = svg.style.visibility;
       svg.style.visibility = "hidden";
       try {
         const b = svg.getBBox();
-        const w = b.width  > 0 ? b.width  : 100;
-        const h = b.height > 0 ? b.height : 100;
-        svg.setAttribute("viewBox", `${b.x || 0} ${b.y || 0} ${w} ${h}`);
+        svg.setAttribute("viewBox", `${b.x || 0} ${b.y || 0} ${Math.max(b.width, 1)} ${Math.max(b.height, 1)}`);
       } catch {
         svg.setAttribute("viewBox", "0 0 100 100");
       } finally {
@@ -88,21 +135,91 @@
       }
     }
 
-    // Init grid layer
+    function renderLayer1FromText(text) {
+      const svg = toSvgElement(text);
+
+      // Put into DOM first, then ensureViewBox (getBBox needs DOM)
+      layerA.replaceChildren(svg);
+      ensureViewBox(svg);
+
+      status.textContent = "Rendered ✓";
+    }
+
+    // Very basic formatter for XML (good enough for quick edits)
+    function formatXml(xml) {
+      const P = "  ";
+      xml = xml.replace(/>\s+</g, "><");
+      let pad = 0;
+      return xml
+        .replace(/</g, "\n<")
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map(line => {
+          const isClosing = /^<\/.+>/.test(line);
+          const isOpening = /^<[^!?/].*[^/]>$/.test(line);
+          const isSelfClosing = /^<.*\/>$/.test(line);
+
+          if (isClosing) pad = Math.max(pad - 1, 0);
+          const out = P.repeat(pad) + line.trim();
+          if (isOpening && !isSelfClosing) pad += 1;
+          return out;
+        })
+        .join("\n")
+        .trim();
+    }
+
+    // Debounce typing -> rerender
+    let t = null;
+    function scheduleRender() {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const txt = svgText.value.trim();
+        if (!txt) return;
+        try {
+          renderLayer1FromText(txt);
+        } catch (e) {
+          status.textContent = "Error: " + (e?.message || e);
+        }
+      }, 250);
+    }
+
+    // Init grid
     (function initGrid() {
       const grid = toSvgElement(GRID_SVG);
       layerB.replaceChildren(grid);
-      // force strokes to follow currentColor (so CSS can invert)
       grid.querySelectorAll("[stroke], [style*='stroke:']").forEach(el => el.setAttribute("stroke", "currentColor"));
     })();
 
+    // Upload -> put file contents into textarea + render
     fileA.addEventListener("change", async () => {
       const f = fileA.files?.[0];
       if (!f) return;
+      const txt = await f.text();
+      svgText.value = txt;
+      try {
+        renderLayer1FromText(txt);
+      } catch (e) {
+        status.textContent = "Error: " + (e?.message || e);
+      }
+    });
 
-      const svg = toSvgElement(await f.text());
-      layerA.replaceChildren(svg);
-      ensureViewBox(svg);
+    // Typing edits
+    svgText.addEventListener("input", scheduleRender);
+
+    // Manual apply
+    applyBtn.addEventListener("click", () => {
+      try {
+        renderLayer1FromText(svgText.value.trim());
+      } catch (e) {
+        status.textContent = "Error: " + (e?.message || e);
+      }
+    });
+
+    // Format
+    formatBtn.addEventListener("click", () => {
+      svgText.value = formatXml(svgText.value);
+      scheduleRender();
     });
   </script>
 </body>
