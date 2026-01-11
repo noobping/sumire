@@ -12,17 +12,19 @@
     label { display: grid; gap: 6px; }
     input[type="file"] { width: 320px; }
 
-    textarea {
-      width: 100%;
-      min-height: 220px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    .editor {
+        background: color-mix(in srgb, Canvas 95%, transparent);
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+        min-width: 420px;
+        max-width: 100%;
+        white-space: pre;
+        overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: 12px;
       line-height: 1.35;
       padding: 10px;
-      border-radius: 10px;
-      border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-      background: color-mix(in srgb, Canvas 95%, transparent);
-      resize: vertical;
+      text-wrap-mode: wrap;
     }
 
     .bar {
@@ -100,7 +102,7 @@
 
     <label>
       <span>Edit SVG XML</span>
-      <textarea id="svgText" placeholder="Upload een SVG, of plak hier SVG XML..."></textarea>
+      <pre id="svgText" contenteditable="true" class="editor"></pre>
     </label>
 
     <div class="bar">
@@ -188,16 +190,16 @@
     // Debounce typing -> rerender
     let t = null;
     function scheduleRender() {
-      clearTimeout(t);
-      t = setTimeout(() => {
-        const txt = svgText.value.trim();
+    clearTimeout(t);
+    t = setTimeout(() => {
+        const txt = svgText.textContent.trim();
         if (!txt) return;
         try {
-          renderLayer1FromText(txt);
+        renderLayer1FromText(txt);
         } catch (e) {
-          status.textContent = "Error: " + (e?.message || e);
+        status.textContent = "Error: " + (e?.message || e);
         }
-      }, 250);
+    }, 250);
     }
 
     // Init grid
@@ -209,15 +211,17 @@
 
     // Upload -> put file contents into textarea + render
     fileA.addEventListener("change", async () => {
-      const f = fileA.files?.[0];
-      if (!f) return;
-      const txt = await f.text();
-      svgText.value = txt;
-      try {
+    const f = fileA.files?.[0];
+    if (!f) return;
+
+    const txt = await f.text();
+    svgText.textContent = txt;
+
+    try {
         renderLayer1FromText(txt);
-      } catch (e) {
+    } catch (e) {
         status.textContent = "Error: " + (e?.message || e);
-      }
+    }
     });
 
     // Typing edits
@@ -225,17 +229,16 @@
 
     // Manual apply
     applyBtn.addEventListener("click", () => {
-      try {
-        renderLayer1FromText(svgText.value.trim());
-      } catch (e) {
-        status.textContent = "Error: " + (e?.message || e);
-      }
+        try {
+            renderLayer1FromText(svgText.textContent.trim());
+        } catch (e) {
+            status.textContent = "Error: " + (e?.message || e);
+        }
     });
 
-    // Format
     formatBtn.addEventListener("click", () => {
-      svgText.value = formatXml(svgText.value);
-      scheduleRender();
+        svgText.textContent = formatXml(svgText.textContent);
+        scheduleRender();
     });
   </script>
 </body>
