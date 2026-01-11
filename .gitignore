@@ -14,3 +14,4 @@ vendor/
 **/mutants.out*/
 .flatpak
 data/*/apps/*.xml
+*.webm
