@@ -69,16 +69,20 @@
 
         /* Layer 2: always visible with auto-contrast */
         #layerB {
-            opacity: 1 !important;
-            /* default if media query not supported */
             color: black;
             mix-blend-mode: difference;
-            /* helps when background isn't pure light/dark */
         }
 
         @media (prefers-color-scheme: dark) {
             #layerB {
                 color: white;
+            }
+        }
+
+        @media (prefers-reduced-transparency: reduce) {
+            #layerB {
+                mix-blend-mode: normal;
+                color: currentColor;
             }
         }
 
@@ -122,12 +126,6 @@
         <div class="layer" id="layerA" aria-label="Laag 1"></div>
         <div class="layer" id="layerB" aria-label="Laag 2"></div>
     </div>
-
-    <p class="hint">
-        Laag 2 (grid) gebruikt automatisch zwart in light mode en wit in dark mode (via
-        <code>prefers-color-scheme</code>).
-        Daarnaast helpt <code>mix-blend-mode: difference</code> om contrast te houden bij “moeilijke” achtergronden.
-    </p>
 
     <script>
         const fileA = document.getElementById("fileA");
@@ -209,7 +207,7 @@
                 }
                 // if any fills exist and you want them contrasting too, uncomment:
                 if (el.hasAttribute("fill") || (el.getAttribute("style") || "").includes("fill:")) {
-                  el.setAttribute("fill", "none");
+                    el.setAttribute("fill", "none");
                 }
             });
         }
