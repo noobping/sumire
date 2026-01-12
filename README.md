@@ -8,19 +8,13 @@
 
 Listen to J-POP and K-POP, or pause and resume the live stream. Stream and metadata provided by [LISTEN.moe](https://listen.moe).
 
-![screenshot](data/screenshot2.png)
-
-## About
-
-[Listen Moe](https://github.com/noobping/listenmoe) is a small GNOME-native radio application for streaming music from [LISTEN.moe](https://listen.moe). It is built with Libadwaita.
+![demo](data/demo.gif)
 
 The application uses a compact, titlebar-style layout that displays the current album and artist, along with basic playback controls.
 
 When album or artist artwork is available, a dominant color is extracted and used to select the appropriate GNOME light or dark appearance. If no artwork is available, the default GNOME appearance is used.
 
 The background includes subtle, animated sound bars that respond to the music. Their color adapts to the extracted palette while remaining unobtrusive. Text readability is preserved using a soft overlay behind the title and subtitle.
-
-![demo](data/demo.gif)
 
 <a href="https://flathub.org/apps/details/io.github.noobping.listenmoe">
   <img alt="Get it on Flathub" src="https://flathub.org/api/badge?locale=en"/>
