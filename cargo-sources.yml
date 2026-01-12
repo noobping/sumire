@@ -970,13 +970,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/getrandom/getrandom-0.2.16.crate
-  sha256: 335ff9f135e4384c8150d6f27c6daed433577f86b4750418338c01a1a2528592
-  dest: cargo/vendor/getrandom-0.2.16
+  url: https://static.crates.io/crates/getrandom/getrandom-0.2.17.crate
+  sha256: ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0
+  dest: cargo/vendor/getrandom-0.2.17
 - type: inline
-  contents: '{"package": "335ff9f135e4384c8150d6f27c6daed433577f86b4750418338c01a1a2528592",
+  contents: '{"package": "ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0",
     "files": {}}'
-  dest: cargo/vendor/getrandom-0.2.16
+  dest: cargo/vendor/getrandom-0.2.17
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -2180,13 +2180,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/rand_core/rand_core-0.9.3.crate
-  sha256: 99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38
-  dest: cargo/vendor/rand_core-0.9.3
+  url: https://static.crates.io/crates/rand_core/rand_core-0.9.4.crate
+  sha256: 4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa
+  dest: cargo/vendor/rand_core-0.9.4
 - type: inline
-  contents: '{"package": "99d9a13982dcf210057a8a78572b2217b667c3beacbf3a0d8b454f6f82837d38",
+  contents: '{"package": "4f1b3bc831f92381018fd9c6350b917c7b21f1eed35a65a51900e0e55a3d7afa",
     "files": {}}'
-  dest: cargo/vendor/rand_core-0.9.3
+  dest: cargo/vendor/rand_core-0.9.4
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -4030,13 +4030,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zmij/zmij-1.0.12.crate
-  sha256: 2fc5a66a20078bf1251bde995aa2fdcc4b800c70b5d92dd2c62abc5c60f679f8
-  dest: cargo/vendor/zmij-1.0.12
+  url: https://static.crates.io/crates/zmij/zmij-1.0.13.crate
+  sha256: ac93432f5b761b22864c774aac244fa5c0fd877678a4c37ebf6cf42208f9c9ec
+  dest: cargo/vendor/zmij-1.0.13
 - type: inline
-  contents: '{"package": "2fc5a66a20078bf1251bde995aa2fdcc4b800c70b5d92dd2c62abc5c60f679f8",
+  contents: '{"package": "ac93432f5b761b22864c774aac244fa5c0fd877678a4c37ebf6cf42208f9c9ec",
     "files": {}}'
-  dest: cargo/vendor/zmij-1.0.12
+  dest: cargo/vendor/zmij-1.0.13
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
