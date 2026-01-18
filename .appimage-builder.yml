@@ -6,7 +6,7 @@ script:
   - cp -r data/scalable/apps/* AppDir/usr/share/icons/hicolor/scalable/apps/
   - cp -r data/symbolic/apps/* AppDir/usr/share/icons/hicolor/symbolic/apps/
   - cp target/release/listenmoe AppDir/usr/bin/
-  - cp data/metainfo.xml.in AppDir/usr/share/metainfo/io.github.noobping.listenmoe.metainfo.xml
+  - cp data/metainfo.xml.in AppDir/usr/share/metainfo/io.github.noobping.listenmoe.appdata.xml
 
 AppDir:
   path: ./AppDir
