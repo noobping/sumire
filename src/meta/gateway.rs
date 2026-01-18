@@ -1,18 +1,14 @@
 use serde::Deserialize;
 use serde_json::Value;
-use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::io::{Read, Write};
-use std::rc::Rc;
 use std::sync::mpsc;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Arc,
 };
 use std::thread;
-use std::time::{Duration, Instant, SystemTime};
-use time::format_description::well_known::Rfc3339;
-use time::OffsetDateTime;
+use std::time::{Duration, Instant};
 use tungstenite::client::connect;
 use tungstenite::protocol::WebSocket;
 use tungstenite::stream::MaybeTlsStream;
@@ -20,145 +16,13 @@ use tungstenite::Message;
 
 #[cfg(debug_assertions)]
 use crate::log::now_string;
+
+use super::controller::Control;
+use super::error::MetaResult;
+use super::schedule::{pick_track_for_playback, schedule_next_from_history, schedule_ui_switch};
+use super::time_parse::parse_rfc3339_system_time;
+use super::track::{TrackInfo, ALBUM_COVER_BASE, ARTIST_IMAGE_BASE};
 use crate::station::Station;
-
-const ALBUM_COVER_BASE: &str = "https://cdn.listen.moe/covers/";
-const ARTIST_IMAGE_BASE: &str = "https://cdn.listen.moe/artists/";
-
-type MetaError = Box<dyn std::error::Error + Send + Sync + 'static>;
-type MetaResult<T> = Result<T, MetaError>;
-
-/// Track info sent to the UI thread.
-#[derive(Debug, Clone)]
-pub struct TrackInfo {
-    pub artist: String,
-    pub title: String,
-    pub album_cover: Option<String>,
-    pub artist_image: Option<String>,
-    pub start_time_utc: SystemTime,
-    pub duration_secs: u32,
-}
-
-#[derive(Debug)]
-enum Control {
-    Stop,
-    Pause,
-    Resume,
-}
-
-#[derive(Debug)]
-enum State {
-    Stopped,
-    Running { tx: mpsc::Sender<Control> },
-}
-
-#[derive(Debug)]
-struct Inner {
-    station: Station,
-    state: State,
-    sender: mpsc::Sender<TrackInfo>,
-    lag_ms: Arc<AtomicU64>,
-    ui_sched_id: Arc<AtomicU64>,
-}
-
-#[derive(Debug)]
-pub struct Meta {
-    inner: RefCell<Inner>,
-}
-
-impl Meta {
-    pub fn new(
-        station: Station,
-        sender: mpsc::Sender<TrackInfo>,
-        lag_ms: Arc<AtomicU64>,
-    ) -> Rc<Self> {
-        Rc::new(Self {
-            inner: RefCell::new(Inner {
-                station,
-                state: State::Stopped,
-                sender,
-                lag_ms,
-                ui_sched_id: Arc::new(AtomicU64::new(0)),
-            }),
-        })
-    }
-
-    pub fn set_station(&self, station: Station) {
-        let mut inner = self.inner.borrow_mut();
-        let was_running = matches!(inner.state, State::Running { .. });
-        if was_running {
-            Self::stop_inner(&mut inner);
-        }
-        inner.station = station;
-        if was_running {
-            Self::start_inner(&mut inner);
-        }
-    }
-
-    pub fn start(&self) {
-        let tx_opt = {
-            let inner = self.inner.borrow();
-            match &inner.state {
-                State::Running { tx } => Some(tx.clone()),
-                State::Stopped => None,
-            }
-        };
-        if let Some(tx) = tx_opt {
-            let _ = tx.send(Control::Resume);
-            return;
-        }
-        // stopped: actually start thread
-        let mut inner = self.inner.borrow_mut();
-        Self::start_inner(&mut inner);
-    }
-
-    pub fn pause(&self) {
-        let inner = self.inner.borrow();
-        if let State::Running { tx } = &inner.state {
-            let _ = tx.send(Control::Pause);
-        }
-    }
-
-    pub fn stop(&self) {
-        let mut inner = self.inner.borrow_mut();
-        Self::stop_inner(&mut inner);
-    }
-
-    fn start_inner(inner: &mut Inner) {
-        match inner.state {
-            State::Running { .. } => return,
-            State::Stopped => {
-                let (tx, rx) = mpsc::channel::<Control>();
-                let station = inner.station;
-                let sender = inner.sender.clone();
-                let lag_ms = inner.lag_ms.clone();
-                let ui_sched_id = inner.ui_sched_id.clone();
-
-                inner.state = State::Running { tx: tx.clone() };
-
-                thread::spawn(move || {
-                    if let Err(err) = run_meta_loop(station, sender, rx, lag_ms, ui_sched_id) {
-                        eprintln!("Gateway error in metadata loop: {err}");
-                    }
-                });
-            }
-        }
-    }
-
-    fn stop_inner(inner: &mut Inner) {
-        if let State::Running { tx } = &inner.state {
-            let _ = tx.send(Control::Stop);
-        }
-        inner.state = State::Stopped;
-    }
-}
-
-impl Drop for Meta {
-    fn drop(&mut self) {
-        let mut inner = self.inner.borrow_mut();
-        Self::stop_inner(&mut inner);
-    }
-}
 
 /// Protocol-level types for the LISTEN.moe gateway
 
@@ -210,7 +74,7 @@ const OP_HEARTBEAT_ACK: u8 = 10;
 const EVENT_TRACK_UPDATE: &str = "TRACK_UPDATE";
 
 /// Outer reconnect loop using blocking tungstenite.
-fn run_meta_loop(
+pub(crate) fn run_meta_loop(
     station: Station,
     sender: mpsc::Sender<TrackInfo>,
     rx: mpsc::Receiver<Control>,
@@ -469,48 +333,6 @@ fn parse_track_info(d: &Value) -> Option<TrackInfo> {
     })
 }
 
-fn parse_rfc3339_system_time(s: &str) -> Option<SystemTime> {
-    let odt = OffsetDateTime::parse(s, &Rfc3339).ok()?;
-    let unix = odt.unix_timestamp(); // seconds
-    let nanos = odt.nanosecond(); // 0..1e9
-
-    let t = if unix >= 0 {
-        SystemTime::UNIX_EPOCH
-            .checked_add(Duration::from_secs(unix as u64))?
-            .checked_add(Duration::from_nanos(nanos as u64))?
-    } else {
-        SystemTime::UNIX_EPOCH
-            .checked_sub(Duration::from_secs((-unix) as u64))?
-            .checked_add(Duration::from_nanos(nanos as u64))?
-    };
-
-    Some(t)
-}
-
-fn pick_track_for_playback(history: &VecDeque<TrackInfo>, lag_ms: u64) -> Option<TrackInfo> {
-    let playback_now = SystemTime::now().checked_sub(Duration::from_millis(lag_ms))?;
-
-    // Prefer a proper [start, end) window when duration is known and > 0.
-    if let Some(hit) = history.iter().rev().find(|t| {
-        if t.duration_secs == 0 {
-            return false;
-        }
-        let start = t.start_time_utc;
-        let end = start.checked_add(Duration::from_secs(t.duration_secs as u64));
-        end.map(|end| playback_now >= start && playback_now < end)
-            .unwrap_or(false)
-    }) {
-        return Some(hit.clone());
-    }
-
-    // Fallback: duration is missing/0 => pick the latest track that started before playback_now.
-    history
-        .iter()
-        .rev()
-        .find(|t| playback_now >= t.start_time_utc)
-        .cloned()
-}
-
 fn set_maybe_tls_read_timeout(
     stream: &mut MaybeTlsStream<std::net::TcpStream>,
     dur: std::time::Duration,
@@ -520,61 +342,4 @@ fn set_maybe_tls_read_timeout(
         MaybeTlsStream::Rustls(tls) => tls.get_mut().set_read_timeout(Some(dur)),
         _ => Ok(()),
     }
-}
-
-fn schedule_ui_switch(
-    sender: mpsc::Sender<TrackInfo>,
-    track: TrackInfo,
-    lag_ms: u64,
-    ui_sched_id: Arc<AtomicU64>,
-    my_id: u64,
-) {
-    thread::spawn(move || {
-        let lag = Duration::from_millis(lag_ms);
-        let target = track.start_time_utc.checked_add(lag);
-        if let Some(target) = target {
-            if let Ok(wait) = target.duration_since(SystemTime::now()) {
-                thread::sleep(wait);
-            }
-        }
-        if ui_sched_id.load(Ordering::Relaxed) == my_id {
-            let _ = sender.send(track);
-        }
-    });
-}
-
-fn schedule_next_from_history(
-    sender: mpsc::Sender<TrackInfo>,
-    history: &VecDeque<TrackInfo>,
-    lag_ms: u64,
-    ui_sched_id: Arc<AtomicU64>,
-) {
-    let playback_now = match SystemTime::now().checked_sub(Duration::from_millis(lag_ms)) {
-        Some(t) => t,
-        None => return,
-    };
-
-    // Find the earliest track whose (start_time_utc) is still in the future for playback time.
-    // i.e. playback_now < track.start_time_utc
-    let next = history
-        .iter()
-        .filter(|t| playback_now < t.start_time_utc)
-        .min_by_key(|t| t.start_time_utc)
-        .cloned();
-
-    let Some(next) = next else { return };
-
-    let my_id = ui_sched_id.fetch_add(1, Ordering::Relaxed) + 1;
-
-    #[cfg(debug_assertions)]
-    println!(
-        "[{}] ui {} resched-next: {} - {} (lag_ms={})",
-        now_string(),
-        my_id,
-        next.artist,
-        next.title,
-        lag_ms
-    );
-
-    schedule_ui_switch(sender, next, lag_ms, ui_sched_id, my_id);
 }
