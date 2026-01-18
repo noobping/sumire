@@ -16,21 +16,18 @@ use adw::{
     Application, StyleManager, WindowTitle,
 };
 use gettextrs::gettext;
-#[cfg(all(target_os = "linux", feature = "controls"))]
-use souvlaki::{MediaControlEvent, MediaMetadata};
 use std::{
     sync::{atomic::Ordering, mpsc},
     thread,
     time::Duration,
 };
 
+#[cfg(target_os = "linux")]
+use super::controls::MediaControlEvent;
 use super::{actions, cover, viz};
 
 const COVER_MAX_SIZE: i32 = 250;
-
-#[cfg(debug_assertions)]
-const APP_ID: &str = "io.github.noobping.listenmoe_develop";
-#[cfg(not(debug_assertions))]
+const APP_NAME: &str = "Listen Moe";
 const APP_ID: &str = "io.github.noobping.listenmoe";
 
 pub fn build_ui(app: &Application) {
@@ -40,7 +37,7 @@ pub fn build_ui(app: &Application) {
     let (tx, rx) = mpsc::channel::<TrackInfo>();
     let meta = Meta::new(station, tx, radio.lag_ms());
     let (cover_tx, cover_rx) = mpsc::channel::<Result<Vec<u8>, String>>();
-    let win_title = WindowTitle::new("Listen Moe", &gettext("J-POP and K-POP radio"));
+    let win_title = WindowTitle::new(APP_NAME, &gettext("J-POP and K-POP radio"));
 
     let play_button = Button::from_icon_name("media-playback-start-symbolic");
     play_button.set_action_name(Some("win.play"));
@@ -51,7 +48,7 @@ pub fn build_ui(app: &Application) {
     let height = 50;
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Listen Moe")
+        .title(APP_NAME)
         .icon_name(APP_ID)
         .default_width(300)
         .default_height(height)
@@ -63,8 +60,8 @@ pub fn build_ui(app: &Application) {
     style_manager.set_color_scheme(adw::ColorScheme::Default);
     let css_provider = cover::install_css_provider();
 
-    #[cfg(all(target_os = "linux", feature = "controls"))]
-    let (controls, ctrl_rx) = actions::build_controls(
+    #[cfg(target_os = "linux")]
+    let (controls, ctrl_rx) = actions::build_actions(
         &window,
         &app,
         &win_title,
@@ -73,7 +70,16 @@ pub fn build_ui(app: &Application) {
         &radio,
         &meta,
     );
-    #[cfg(not(all(target_os = "linux", feature = "controls")))]
+    #[cfg(target_os = "linux")]
+    let set_metadata = {
+        let controls = controls.clone();
+        move |title: String, artist: String, art_url: Option<&str>| {
+            if let Some(c) = controls.as_ref() {
+                c.set_metadata(title.as_str(), artist.as_str(), APP_NAME, art_url);
+            }
+        }
+    };
+    #[cfg(not(target_os = "linux"))]
     actions::build_actions(
         &window,
         &app,
@@ -168,12 +174,11 @@ pub fn build_ui(app: &Application) {
         let art_picture = art_picture.clone();
         let cover_rx = cover_rx;
         let cover_tx = cover_tx.clone();
-        #[cfg(all(target_os = "linux", feature = "controls"))]
+        #[cfg(target_os = "linux")]
         let window = window.clone();
-        #[cfg(all(target_os = "linux", feature = "controls"))]
-        let media_controls = controls.clone();
-        #[cfg(all(target_os = "linux", feature = "controls"))]
-        let ctrl_rx = ctrl_rx;
+        #[cfg(target_os = "linux")]
+        let set_metadata = set_metadata.clone();
+
         let clear_art_ui = |art_picture: &gtk::Picture,
                             art_popover: &gtk::Popover,
                             style_manager: &adw::StyleManager,
@@ -188,65 +193,57 @@ pub fn build_ui(app: &Application) {
         };
 
         glib::timeout_add_local(Duration::from_millis(100), move || {
-            #[cfg(all(target_os = "linux", feature = "controls"))]
-            for event in ctrl_rx.try_iter() {
-                let _ = match event {
-                    MediaControlEvent::Play => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.play",
-                        None::<&glib::Variant>,
-                    ),
-                    MediaControlEvent::Pause => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.pause",
-                        None::<&glib::Variant>,
-                    ),
-                    MediaControlEvent::Stop => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.stop",
-                        None::<&glib::Variant>,
-                    ),
-                    MediaControlEvent::Toggle => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.toggle",
-                        None::<&glib::Variant>,
-                    ),
-                    MediaControlEvent::Next => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.next_station",
-                        None::<&glib::Variant>,
-                    ),
-                    MediaControlEvent::Previous => adw::prelude::WidgetExt::activate_action(
-                        &window,
-                        "win.prev_station",
-                        None::<&glib::Variant>,
-                    ),
-                    _ => Ok(()),
-                };
+            #[cfg(target_os = "linux")]
+            if let Some(ctrl_rx) = &ctrl_rx {
+                for event in ctrl_rx.try_iter() {
+                    let _ = match event {
+                        MediaControlEvent::Play => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.play",
+                            None::<&glib::Variant>,
+                        ),
+                        MediaControlEvent::Pause => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.pause",
+                            None::<&glib::Variant>,
+                        ),
+                        MediaControlEvent::Stop => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.stop",
+                            None::<&glib::Variant>,
+                        ),
+                        MediaControlEvent::Toggle => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.toggle",
+                            None::<&glib::Variant>,
+                        ),
+                        MediaControlEvent::Next => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.next_station",
+                            None::<&glib::Variant>,
+                        ),
+                        MediaControlEvent::Previous => adw::prelude::WidgetExt::activate_action(
+                            &window,
+                            "win.prev_station",
+                            None::<&glib::Variant>,
+                        ),
+                    };
+                }
             }
 
             for info in rx.try_iter() {
                 win.set_title(&info.artist);
                 win.set_subtitle(&info.title);
 
-                #[cfg(all(target_os = "linux", feature = "controls"))]
+                #[cfg(target_os = "linux")]
                 let cover_url = info
                     .album_cover
                     .as_ref()
                     .or(info.artist_image.as_ref())
                     .map(|s| s.as_str());
 
-                #[cfg(all(target_os = "linux", feature = "controls"))]
-                {
-                    let mut controls = media_controls.borrow_mut();
-                    let _ = controls.set_metadata(MediaMetadata {
-                        title: Some(&info.title),
-                        artist: Some(&info.artist),
-                        album: Some("Listen Moe"),
-                        cover_url: cover_url, // becomes None if no cover
-                        ..Default::default()
-                    });
-                }
+                #[cfg(target_os = "linux")]
+                set_metadata(info.title.clone(), info.artist.clone(), cover_url.clone());
 
                 if let Some(url) = info.album_cover.as_ref().or(info.artist_image.as_ref()) {
                     let tx = cover_tx.clone();

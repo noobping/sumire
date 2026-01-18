@@ -8,18 +8,21 @@ use adw::gtk::{
 };
 use adw::{prelude::*, Application, WindowTitle};
 use gettextrs::gettext;
-#[cfg(all(target_os = "linux", feature = "controls"))]
-use souvlaki::{MediaControlEvent, MediaControls, MediaPlayback, PlatformConfig};
-#[cfg(all(target_os = "linux", feature = "controls"))]
-use std::{cell::RefCell, sync::mpsc};
+#[cfg(target_os = "linux")]
+use mpris_server::PlaybackStatus;
 use std::rc::Rc;
+#[cfg(target_os = "linux")]
+use std::sync::mpsc;
 
+#[cfg(target_os = "linux")]
+use super::controls::{build_controls, MediaControlEvent, MediaControls};
 use crate::listen::Listen;
 use crate::meta::Meta;
 use crate::station::Station;
 
+const APP_NAME: &str = "Listen Moe";
 #[cfg(debug_assertions)]
-const APP_ID: &str = "io.github.noobping.listenmoe_develop";
+const APP_ID: &str = "io.github.noobping.listenmoe_beta";
 #[cfg(not(debug_assertions))]
 const APP_ID: &str = "io.github.noobping.listenmoe";
 
@@ -32,8 +35,8 @@ where
     action
 }
 
-#[cfg(all(target_os = "linux", feature = "controls"))]
-pub fn build_controls(
+#[cfg(target_os = "linux")]
+pub fn build_actions(
     window: &ApplicationWindow,
     app: &Application,
     win_title: &WindowTitle,
@@ -42,41 +45,41 @@ pub fn build_controls(
     radio: &Rc<Listen>,
     meta: &Rc<Meta>,
 ) -> (
-    Rc<RefCell<MediaControls>>,
-    mpsc::Receiver<MediaControlEvent>,
+    Option<Rc<MediaControls>>,
+    Option<mpsc::Receiver<MediaControlEvent>>,
 ) {
-    let platform_config = PlatformConfig {
-        display_name: "Listen Moe",
-        dbus_name: APP_ID,
-        hwnd: None,
+    let (controls, ctrl_rx) = {
+        match build_controls(APP_ID, APP_NAME, APP_ID) {
+            Ok((controls, ctrl_rx)) => (Some(controls), Some(ctrl_rx)),
+            Err(e) => {
+                eprintln!("Media control unavailable: {e}");
+                (None, None)
+            }
+        }
     };
-    let controls = MediaControls::new(platform_config).expect("Failed to init media controls");
-    let controls = Rc::new(RefCell::new(controls));
-    let (ctrl_tx, ctrl_rx) = mpsc::channel::<MediaControlEvent>();
-    let tx = ctrl_tx.clone();
-    controls
-        .borrow_mut()
-        .attach(move |event| {
-            let _ = tx.send(event);
-        })
-        .expect("Failed to attach media control events");
+    let set_playback = {
+        let controls = controls.clone();
+        move |status| {
+            if let Some(c) = controls.as_ref() {
+                c.set_playback(status);
+            }
+        }
+    };
     window.add_action(&{
         let radio = radio.clone();
         let meta = meta.clone();
         let win = win_title.clone();
         let play = play_button.clone();
         let pause = pause_button.clone();
-        let controls = controls.clone();
+        let set_playback = set_playback.clone();
         make_action("play", move || {
-            win.set_title("Listen Moe");
+            win.set_title(APP_NAME);
             win.set_subtitle("Connecting...");
             meta.start();
             radio.start();
             play.set_visible(false);
             pause.set_visible(true);
-            let _ = controls
-                .borrow_mut()
-                .set_playback(MediaPlayback::Playing { progress: None });
+            set_playback(PlaybackStatus::Playing);
         })
     });
     window.add_action(&{
@@ -85,17 +88,15 @@ pub fn build_controls(
         let win = win_title.clone();
         let play = play_button.clone();
         let pause = pause_button.clone();
-        let controls = controls.clone();
+        let set_playback = set_playback.clone();
         make_action("pause", move || {
             meta.pause();
             radio.pause();
             pause.set_visible(false);
             play.set_visible(true);
-            win.set_title("Listen Moe");
+            win.set_title(APP_NAME);
             win.set_subtitle(&gettext("J-POP and K-POP radio"));
-            let _ = controls
-                .borrow_mut()
-                .set_playback(MediaPlayback::Paused { progress: None });
+            set_playback(PlaybackStatus::Paused);
         })
     });
     window.add_action(&{
@@ -103,18 +104,16 @@ pub fn build_controls(
         let meta = meta.clone();
         let win = win_title.clone();
         let play = play_button.clone();
-        let stop = pause_button.clone();
-        let controls = controls.clone();
+        let pause = pause_button.clone();
+        let set_playback = set_playback.clone();
         make_action("stop", move || {
             meta.stop();
             radio.stop();
-            stop.set_visible(false);
+            pause.set_visible(false);
             play.set_visible(true);
-            win.set_title("Listen Moe");
+            win.set_title(APP_NAME);
             win.set_subtitle(&gettext("J-POP and K-POP radio"));
-            let _ = controls
-                .borrow_mut()
-                .set_playback(MediaPlayback::Paused { progress: None });
+            set_playback(PlaybackStatus::Stopped);
         })
     });
     add_actions(window, win_title, play_button, pause_button, radio, meta);
@@ -123,7 +122,7 @@ pub fn build_controls(
     (controls, ctrl_rx)
 }
 
-#[cfg(not(all(target_os = "linux", feature = "controls")))]
+#[cfg(not(target_os = "linux"))]
 pub fn build_actions(
     window: &ApplicationWindow,
     app: &Application,
@@ -203,10 +202,13 @@ fn add_actions(
             let comments = gettext(
                 "It is time to ditch other radios. Stream and metadata provided by LISTEN.moe.",
             );
+            let version = env!("CARGO_PKG_VERSION");
+            #[cfg(debug_assertions)]
+            let version = format!("{}-beta", version);
             let about = adw::AboutDialog::builder()
-                .application_name("Listen Moe")
+                .application_name(APP_NAME)
                 .application_icon(APP_ID)
-                .version(env!("CARGO_PKG_VERSION"))
+                .version(version)
                 .developers(&authors[..])
                 .translator_credits(gettext("AI translation (GPT-5.2); reviewed by nobody"))
                 .website(homepage)
