@@ -290,13 +290,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/cc/cc-1.2.53.crate
-  sha256: 755d2fce177175ffca841e9a06afdb2c4ab0f593d53b4dee48147dfaade85932
-  dest: cargo/vendor/cc-1.2.53
+  url: https://static.crates.io/crates/cc/cc-1.2.54.crate
+  sha256: 6354c81bbfd62d9cfa9cb3c773c2b7b2a3a482d569de977fd0e961f6e7c00583
+  dest: cargo/vendor/cc-1.2.54
 - type: inline
-  contents: '{"package": "755d2fce177175ffca841e9a06afdb2c4ab0f593d53b4dee48147dfaade85932",
+  contents: '{"package": "6354c81bbfd62d9cfa9cb3c773c2b7b2a3a482d569de977fd0e961f6e7c00583",
     "files": {}}'
-  dest: cargo/vendor/cc-1.2.53
+  dest: cargo/vendor/cc-1.2.54
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -310,13 +310,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/cfg-expr/cfg-expr-0.20.5.crate
-  sha256: 21be0e1ce6cdb2ee7fff840f922fb04ead349e5cfb1e750b769132d44ce04720
-  dest: cargo/vendor/cfg-expr-0.20.5
+  url: https://static.crates.io/crates/cfg-expr/cfg-expr-0.20.6.crate
+  sha256: 78cef5b5a1a6827c7322ae2a636368a573006b27cfa76c7ebd53e834daeaab6a
+  dest: cargo/vendor/cfg-expr-0.20.6
 - type: inline
-  contents: '{"package": "21be0e1ce6cdb2ee7fff840f922fb04ead349e5cfb1e750b769132d44ce04720",
+  contents: '{"package": "78cef5b5a1a6827c7322ae2a636368a573006b27cfa76c7ebd53e834daeaab6a",
     "files": {}}'
-  dest: cargo/vendor/cfg-expr-0.20.5
+  dest: cargo/vendor/cfg-expr-0.20.6
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -1660,13 +1660,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/openssl-probe/openssl-probe-0.2.0.crate
-  sha256: 9f50d9b3dabb09ecd771ad0aa242ca6894994c130308ca3d7684634df8037391
-  dest: cargo/vendor/openssl-probe-0.2.0
+  url: https://static.crates.io/crates/openssl-probe/openssl-probe-0.2.1.crate
+  sha256: 7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe
+  dest: cargo/vendor/openssl-probe-0.2.1
 - type: inline
-  contents: '{"package": "9f50d9b3dabb09ecd771ad0aa242ca6894994c130308ca3d7684634df8037391",
+  contents: '{"package": "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe",
     "files": {}}'
-  dest: cargo/vendor/openssl-probe-0.2.0
+  dest: cargo/vendor/openssl-probe-0.2.1
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -1820,13 +1820,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.105.crate
-  sha256: 535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7
-  dest: cargo/vendor/proc-macro2-1.0.105
+  url: https://static.crates.io/crates/proc-macro2/proc-macro2-1.0.106.crate
+  sha256: 8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934
+  dest: cargo/vendor/proc-macro2-1.0.106
 - type: inline
-  contents: '{"package": "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7",
+  contents: '{"package": "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934",
     "files": {}}'
-  dest: cargo/vendor/proc-macro2-1.0.105
+  dest: cargo/vendor/proc-macro2-1.0.106
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -1860,13 +1860,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/quote/quote-1.0.43.crate
-  sha256: dc74d9a594b72ae6656596548f56f667211f8a97b3d4c3d467150794690dc40a
-  dest: cargo/vendor/quote-1.0.43
+  url: https://static.crates.io/crates/quote/quote-1.0.44.crate
+  sha256: 21b2ebcf727b7760c461f091f9f0f539b77b8e87f2fd88131e7f1b433b3cece4
+  dest: cargo/vendor/quote-1.0.44
 - type: inline
-  contents: '{"package": "dc74d9a594b72ae6656596548f56f667211f8a97b3d4c3d467150794690dc40a",
+  contents: '{"package": "21b2ebcf727b7760c461f091f9f0f539b77b8e87f2fd88131e7f1b433b3cece4",
     "files": {}}'
-  dest: cargo/vendor/quote-1.0.43
+  dest: cargo/vendor/quote-1.0.44
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -2490,13 +2490,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/thiserror/thiserror-2.0.17.crate
-  sha256: f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8
-  dest: cargo/vendor/thiserror-2.0.17
+  url: https://static.crates.io/crates/thiserror/thiserror-2.0.18.crate
+  sha256: 4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4
+  dest: cargo/vendor/thiserror-2.0.18
 - type: inline
-  contents: '{"package": "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8",
+  contents: '{"package": "4288b5bcbc7920c07a1149a35cf9590a2aa808e0bc1eafaade0b80947865fbc4",
     "files": {}}'
-  dest: cargo/vendor/thiserror-2.0.17
+  dest: cargo/vendor/thiserror-2.0.18
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -2510,13 +2510,13 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/thiserror-impl/thiserror-impl-2.0.17.crate
-  sha256: 3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913
-  dest: cargo/vendor/thiserror-impl-2.0.17
+  url: https://static.crates.io/crates/thiserror-impl/thiserror-impl-2.0.18.crate
+  sha256: ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5
+  dest: cargo/vendor/thiserror-impl-2.0.18
 - type: inline
-  contents: '{"package": "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913",
+  contents: '{"package": "ebc4ee7f67670e9b64d05fa4253e753e016c6c95ff35b89b7941d6b856dec1d5",
     "files": {}}'
-  dest: cargo/vendor/thiserror-impl-2.0.17
+  dest: cargo/vendor/thiserror-impl-2.0.18
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -3440,23 +3440,23 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zbus/zbus-5.13.1.crate
-  sha256: 17f79257df967b6779afa536788657777a0001f5b42524fcaf5038d4344df40b
-  dest: cargo/vendor/zbus-5.13.1
+  url: https://static.crates.io/crates/zbus/zbus-5.13.2.crate
+  sha256: 1bfeff997a0aaa3eb20c4652baf788d2dfa6d2839a0ead0b3ff69ce2f9c4bdd1
+  dest: cargo/vendor/zbus-5.13.2
 - type: inline
-  contents: '{"package": "17f79257df967b6779afa536788657777a0001f5b42524fcaf5038d4344df40b",
+  contents: '{"package": "1bfeff997a0aaa3eb20c4652baf788d2dfa6d2839a0ead0b3ff69ce2f9c4bdd1",
     "files": {}}'
-  dest: cargo/vendor/zbus-5.13.1
+  dest: cargo/vendor/zbus-5.13.2
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zbus_macros/zbus_macros-5.13.1.crate
-  sha256: aad23e2d2f91cae771c7af7a630a49e755f1eb74f8a46e9f6d5f7a146edf5a37
-  dest: cargo/vendor/zbus_macros-5.13.1
+  url: https://static.crates.io/crates/zbus_macros/zbus_macros-5.13.2.crate
+  sha256: 0bbd5a90dbe8feee5b13def448427ae314ccd26a49cac47905cafefb9ff846f1
+  dest: cargo/vendor/zbus_macros-5.13.2
 - type: inline
-  contents: '{"package": "aad23e2d2f91cae771c7af7a630a49e755f1eb74f8a46e9f6d5f7a146edf5a37",
+  contents: '{"package": "0bbd5a90dbe8feee5b13def448427ae314ccd26a49cac47905cafefb9ff846f1",
     "files": {}}'
-  dest: cargo/vendor/zbus_macros-5.13.1
+  dest: cargo/vendor/zbus_macros-5.13.2
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
@@ -3550,33 +3550,33 @@
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zmij/zmij-1.0.15.crate
-  sha256: 94f63c051f4fe3c1509da62131a678643c5b6fbdc9273b2b79d4378ebda003d2
-  dest: cargo/vendor/zmij-1.0.15
+  url: https://static.crates.io/crates/zmij/zmij-1.0.16.crate
+  sha256: dfcd145825aace48cff44a8844de64bf75feec3080e0aa5cdbde72961ae51a65
+  dest: cargo/vendor/zmij-1.0.16
 - type: inline
-  contents: '{"package": "94f63c051f4fe3c1509da62131a678643c5b6fbdc9273b2b79d4378ebda003d2",
+  contents: '{"package": "dfcd145825aace48cff44a8844de64bf75feec3080e0aa5cdbde72961ae51a65",
     "files": {}}'
-  dest: cargo/vendor/zmij-1.0.15
+  dest: cargo/vendor/zmij-1.0.16
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zvariant/zvariant-5.9.1.crate
-  sha256: 326aaed414f04fe839777b4c443d4e94c74e7b3621093bd9c5e649ac8aa96543
-  dest: cargo/vendor/zvariant-5.9.1
+  url: https://static.crates.io/crates/zvariant/zvariant-5.9.2.crate
+  sha256: 68b64ef4f40c7951337ddc7023dd03528a57a3ce3408ee9da5e948bd29b232c4
+  dest: cargo/vendor/zvariant-5.9.2
 - type: inline
-  contents: '{"package": "326aaed414f04fe839777b4c443d4e94c74e7b3621093bd9c5e649ac8aa96543",
+  contents: '{"package": "68b64ef4f40c7951337ddc7023dd03528a57a3ce3408ee9da5e948bd29b232c4",
     "files": {}}'
-  dest: cargo/vendor/zvariant-5.9.1
+  dest: cargo/vendor/zvariant-5.9.2
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
-  url: https://static.crates.io/crates/zvariant_derive/zvariant_derive-5.9.1.crate
-  sha256: ba44e1f8f4da9e6e2d25d2a60b116ef8b9d0be174a7685e55bb12a99866279a7
-  dest: cargo/vendor/zvariant_derive-5.9.1
+  url: https://static.crates.io/crates/zvariant_derive/zvariant_derive-5.9.2.crate
+  sha256: 484d5d975eb7afb52cc6b929c13d3719a20ad650fea4120e6310de3fc55e415c
+  dest: cargo/vendor/zvariant_derive-5.9.2
 - type: inline
-  contents: '{"package": "ba44e1f8f4da9e6e2d25d2a60b116ef8b9d0be174a7685e55bb12a99866279a7",
+  contents: '{"package": "484d5d975eb7afb52cc6b929c13d3719a20ad650fea4120e6310de3fc55e415c",
     "files": {}}'
-  dest: cargo/vendor/zvariant_derive-5.9.1
+  dest: cargo/vendor/zvariant_derive-5.9.2
   dest-filename: .cargo-checksum.json
 - type: archive
   archive-type: tar-gzip
